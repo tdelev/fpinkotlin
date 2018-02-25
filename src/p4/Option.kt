@@ -5,10 +5,10 @@ import p3.Nil
 import p3.apply
 
 sealed class Option<out T> {
-    fun <B> map(f: (T) -> B): Option<B> =
+    inline fun <B : Any> map(f: (T) -> B): Option<B> =
             when (this) {
-                None -> None
                 is Some -> Some(f(this.value))
+                None -> None
             }
 
     fun <B> flatMap(f: (T) -> Option<B>): Option<B> =
@@ -17,13 +17,13 @@ sealed class Option<out T> {
                 is Some -> f(this.value)
             }
 
-    fun <T> Option<T>.getOrElse(get: () -> T): T =
+    inline fun <T> Option<T>.getOrElse(get: () -> T): T =
             when (this) {
-                is None -> get()
+                None -> get()
                 is Some -> this.value
             }
 
-    fun <T> Option<T>.orElse(other: T): T =
+    inline fun <T> Option<T>.orElse(other: T): T =
             when (this) {
                 None -> other
                 is Some -> this.value
@@ -38,7 +38,7 @@ sealed class Option<out T> {
 }
 
 object None : Option<Nothing>()
-class Some<out T>(val value: T) : Option<T>()
+data class Some<out T>(val value: T) : Option<T>()
 
 fun variance(list: List<Double>): Option<Double> =
         mean(list).flatMap { m -> mean(list.map { Math.pow(it - m, 2.0) }) }

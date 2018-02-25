@@ -19,6 +19,13 @@ sealed class List<out T> {
         Nil -> identity
         is Cons -> f(this.head, foldRight(this.tail, identity, f))
     }
+
+    fun all(predicate: (T) -> Boolean): Boolean =
+            foldRight(true, { element, exist -> predicate(element) && exist })
+
+    fun any(predicate: (T) -> Boolean): Boolean =
+            foldRight(false, { element, exist -> predicate(element) || exist })
+
 }
 
 object Nil : List<Nothing>()
@@ -100,6 +107,15 @@ fun <T> concat(list: List<List<T>>): List<T> {
     })
 }
 
+fun <T> fill(n: Int, element: T): List<T> {
+    tailrec fun fillAcc(n: Int, acc: List<T>): List<T> =
+            if (n == 0) acc
+            else fillAcc(n - 1, Cons(element, acc))
+
+    return fillAcc(n, Nil)
+}
+
+
 fun transformInt(list: List<Int>): List<Int> =
         foldRight<Int, List<Int>>(list, Nil, { element, result -> Cons(element + 1, result) })
 
@@ -133,12 +149,14 @@ fun main(args: Array<String>) {
     for (i in 1..10) {
         list = Cons(i, list)
     }*/
-    val list1 = apply(1, 2, 3, 99, 100)
+/*    val list1 = apply(1, 2, 3, 99, 100)
     val list2 = apply(5, 6, 7)
     val list3 = apply(8, 9, 10)
     val l = apply(list1, list2, list3)
     println(l)
     println(filter(map(list1, { x -> x * 10 }), { it < 30 }))
     println(pairwise(list1, list2))
-    println(zipWith(list1, list2, { x, y -> x * y }))
+    println(zipWith(list1, list2, { x, y -> x * y }))*/
+    val zeros = fill(10, 0)
+    println(zeros)
 }

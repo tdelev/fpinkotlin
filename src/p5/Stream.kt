@@ -91,6 +91,10 @@ sealed class Stream<out T> {
     fun exists(predicate: (T) -> Boolean): Boolean =
             foldRight({ false }, { left, right -> predicate(left) || right() })
 
+    fun find(predicate: (T) -> Boolean): Option<T> =
+            foldRight({ None as Option<T> },
+                    { left, right -> if (predicate(left)) Some(left) else right() })
+
     fun forAll(predicate: (T) -> Boolean): Boolean =
             foldRight({ true }, { left, right -> predicate(left) && right() })
 
@@ -179,7 +183,7 @@ fun <A, S> unfold(initial: S, f: (S) -> Option<Pair<A, S>>): Stream<A> {
 
 fun constantU(value: Int) = unfold(value, { Some(Pair(it, it)) })
 
-fun fromU(start: Int) = unfold(start, { state -> Some(Pair(state + 1, state + 1)) })
+fun fromU(start: Int) = unfold(start, { Some(Pair(it + 1, it + 1)) })
 
 fun fibsU() = unfold(Pair(0, 1), { state ->
     Some(Pair(Pair(state.second, state.first + state.second),
@@ -236,7 +240,7 @@ fun main(args: Array<String>) {
     println(fibs().take(10).toList())
     println(constantU(10).mapU({ it / 5 }).take(20).toList())
     println(fibsU().take(15).toList())*/
-    println(stream.mapU({ it * 5 }).toList())
+/*    println(stream.mapU({ it * 5 }).toList())
     println(stream.takeU(2).toList())
     println(stream.zipWith(constantU(5), { a, b -> a + b }).toList())
     println(stream.zipAll(constantU(5).take(3), { a, b -> a + b }).toList())
@@ -246,5 +250,5 @@ fun main(args: Array<String>) {
     println(stream.tails().toList().map { it.toList() })
     val subseq = apply(3, 4, 5)
     println(stream2.hasSubsequence(subseq))
-    println(stream2.exists { it == 2 })
+    println(stream2.exists { it == 2 })*/
 }

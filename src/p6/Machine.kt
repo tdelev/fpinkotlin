@@ -29,7 +29,7 @@ object Candy {
         }
     }
 
-    fun simulateMachine(inputs: List<Input>): State<Machine, Pair<Int, Int>> {
+    fun simulateMachine(inputs: List<Input>): StateType<Machine, Pair<Int, Int>> {
         return {
             reverse(inputs).foldRight(Pair(Pair(it.candies, it.coins), it), { input, acc ->
                 val updated = update(input)(acc.second)

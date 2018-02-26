@@ -11,6 +11,8 @@ import p6.RNG
 import p6.Random
 import p6.State
 import p6.StateI
+import p7.Par
+import java.util.concurrent.Executors
 import kotlin.math.absoluteValue
 import kotlin.math.min
 
@@ -20,7 +22,8 @@ typealias TestCases = Int
 typealias MaxSize = Int
 
 fun <A> forAll(gen: Gen<A>, predicate: (A) -> Boolean): Prop = Prop { max, n, rng ->
-    val res = randomStream(gen, rng).zipWith(from(0), { a, b -> Pair(a, b) })
+    val res = randomStream(gen, rng)
+            .zipWith(from(0), { a, b -> Pair(a, b) })
             .take(n)
             .map {
                 val element = it.first
@@ -29,7 +32,7 @@ fun <A> forAll(gen: Gen<A>, predicate: (A) -> Boolean): Prop = Prop { max, n, rn
                     if (predicate(element)) Passed
                     else Failed(element.toString(), index)
                 } catch (e: Exception) {
-                    Failed(buildMessage(element, e), 1)
+                    Failed(buildMessage(element, e), index)
                 }
             }.find({ it.isFalsified })
 
@@ -67,6 +70,10 @@ fun <A> forAll(gen: (Int) -> Gen<A>, predicate: (A) -> Boolean): Prop = Prop { m
 fun <A> forAll(sgen: SGen<A>, predicate: (A) -> Boolean): Prop =
         forAll(sgen.forSize, predicate)
 
+fun check(predicate: () -> Boolean): Prop = Prop { _, _, _ ->
+    if (predicate()) Proved else Failed("", 0)
+}
+
 class Prop(val run: (MaxSize, TestCases, RNG) -> Result) {
 
 
@@ -90,6 +97,10 @@ sealed class Result {
 }
 
 object Passed : Result() {
+    override val isFalsified = false
+}
+
+object Proved : Result() {
     override val isFalsified = false
 }
 
@@ -130,7 +141,6 @@ class SGen<A>(val forSize: (Int) -> Gen<A>) {
 }
 
 object Generator {
-
     fun <A> unit(a: A): Gen<A> =
             Gen(StateI.unit(a))
 
@@ -160,8 +170,9 @@ fun run(prop: Prop, maxSize: Int = 100, testCases: Int = 100,
         rng: RNG = Random.SimpleRNG(System.currentTimeMillis())) {
     val result = prop.run(maxSize, testCases, rng)
     when (result) {
-        Passed -> println("OK, passed $testCases")
+        Passed -> println("OK, passed $testCases tests.")
         is Failed -> println("Falsified after ${result.successes} passed tests:\n${result.failure}")
+        Proved -> println("OK, proved property.")
     }
 }
 
@@ -179,5 +190,9 @@ fun main(args: Array<String>) {
     //println(listR.forSize(5).sample.run(generator))
     /*val rndS = randomStream(smallInt, generator).zipWith(from(0), { a, b -> Pair(a, b) })
     println(rndS.take(10).find({ it.first > 9 }))*/
-
+    val ES = Executors.newCachedThreadPool()
+    val p1 = check({
+        Par.map(Par.unit(1), { it + 1 })(ES).get() == Par.unit(2)(ES).get()
+    })
+    run(p1)
 }

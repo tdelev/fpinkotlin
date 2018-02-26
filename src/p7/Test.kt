@@ -1,9 +1,11 @@
 package p7
 
+import p7.Par.fork
+import p7.Par.map2
 import java.util.concurrent.Executors
 
-fun sum(ints: List<Int>): Par<Int> =
-        if (ints.size <= 1) unit(ints[0])
+fun sum(ints: List<Int>): ParType<Int> =
+        if (ints.size <= 1) Par.unit(ints[0])
         else {
             val left = ints.subList(0, ints.size / 2)
             val right = ints.subList(ints.size / 2, ints.size)
@@ -14,6 +16,6 @@ fun sum(ints: List<Int>): Par<Int> =
 
 fun main(args: Array<String>) {
     val s = sum(listOf(1, 10, 20, 30, 40, 50))
-    val result = run(Executors.newFixedThreadPool(5), s).get()
+    val result = Par.run(Executors.newFixedThreadPool(5), s).get()
     println(result)
 }

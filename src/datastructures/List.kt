@@ -13,11 +13,11 @@ sealed class List<out T> {
     }
 
     fun <R> map(f: (T) -> R): List<R> =
-            foldRight(Nil as List<R>, { element, result -> Cons(f(element), result) })
+            foldRight<List<R>>(Nil, { element, result -> Cons(f(element), result) })
 
     fun <R> foldRight(identity: R, f: (T, R) -> R): R = when (this) {
         Nil -> identity
-        is Cons -> f(this.head, foldRight(identity, f))
+        is Cons -> f(this.head, this.tail.foldRight(identity, f))
     }
 
     fun all(predicate: (T) -> Boolean): Boolean =
@@ -42,7 +42,7 @@ sealed class List<out T> {
     fun drop(n: Int): List<T> =
             when (n) {
                 0 -> this
-                else -> drop(n - 1)
+                else -> if (this == Nil) this else this.tail().drop(n - 1)
             }
 
     fun dropWhile(predicate: (T) -> Boolean): List<T> =
@@ -60,9 +60,9 @@ sealed class List<out T> {
                 else result
             })
 
-    val length = foldRight(0, { _, count -> count + 1 })
+    val length = { foldRight(0, { _, count -> count + 1 }) }
 
-    val reverse = foldLeft(Nil as List<T>, { x, y -> Cons(x, y) })
+    val reverse = { foldLeft<List<T>>(Nil, { x, y -> Cons(x, y) }) }
 }
 
 object Nil : List<Nothing>()
@@ -139,6 +139,6 @@ fun main(args: Array<String>) {
     println(filter(map(list1, { x -> x * 10 }), { it < 30 }))
     println(pairwise(list1, list2))
     println(zipWith(list1, list2, { x, y -> x * y }))*/
-    val zeros = fill(10, 0)
-    println(zeros)
+    val list = apply(1, 2, 3)
+    println(list)
 }

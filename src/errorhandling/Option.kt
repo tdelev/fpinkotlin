@@ -5,7 +5,8 @@ import datastructures.Nil
 import datastructures.apply
 
 sealed class Option<out T> {
-    inline fun <B : Any> map(f: (T) -> B): Option<B> =
+
+    fun <B : Any> map(f: (T) -> B): Option<B> =
             when (this) {
                 is Some -> Some(f(this.value))
                 None -> None
@@ -17,17 +18,6 @@ sealed class Option<out T> {
                 is Some -> f(this.value)
             }
 
-    inline fun <T> Option<T>.getOrElse(get: () -> T): T =
-            when (this) {
-                None -> get()
-                is Some -> this.value
-            }
-
-    inline fun <T> Option<T>.orElse(other: T): T =
-            when (this) {
-                None -> other
-                is Some -> this.value
-            }
 
     fun filter(predicate: (T) -> Boolean): Option<T> =
             when (this) {
@@ -39,6 +29,18 @@ sealed class Option<out T> {
 
 object None : Option<Nothing>()
 data class Some<out T>(val value: T) : Option<T>()
+
+fun <T> Option<T>.getOrElse(get: () -> T): T =
+        when (this) {
+            None -> get()
+            is Some -> this.value
+        }
+
+fun <T> Option<T>.orElse(other: T): T =
+        when (this) {
+            None -> other
+            is Some -> this.value
+        }
 
 fun variance(list: List<Double>): Option<Double> =
         mean(list).flatMap { m -> mean(list.map { Math.pow(it - m, 2.0) }) }

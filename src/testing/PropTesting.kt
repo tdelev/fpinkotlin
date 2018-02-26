@@ -3,16 +3,17 @@ package testing
 import datastructures.List
 import datastructures.fill
 import errorhandling.Some
+import errorhandling.orElse
 import laziness.Stream
 import laziness.from
 import laziness.unfold
 import laziness.zipWith
+import parallelism.Par
+import parallelism.ParType
 import state.RNG
 import state.Random
 import state.State
 import state.StateI
-import parallelism.Par
-import parallelism.ParType
 import java.util.concurrent.Executors
 import kotlin.math.absoluteValue
 import kotlin.math.min
@@ -23,7 +24,7 @@ typealias TestCases = Int
 typealias MaxSize = Int
 
 fun <A> forAll(gen: Gen<A>, predicate: (A) -> Boolean): Prop = Prop { max, n, rng ->
-    val res = randomStream(gen, rng)
+    randomStream(gen, rng)
             .zipWith(from(0), { a, b -> Pair(a, b) })
             .take(n)
             .map {
@@ -36,9 +37,7 @@ fun <A> forAll(gen: Gen<A>, predicate: (A) -> Boolean): Prop = Prop { max, n, rn
                     Failed(buildMessage(element, e), index)
                 }
             }.find({ it.isFalsified })
-
-    if (res is Some) res.value
-    else Passed
+            .orElse(Passed)
 }
 
 fun <A> randomStream(gen: Gen<A>, rng: RNG): Stream<A> =
@@ -83,7 +82,6 @@ fun checkPar(par: ParType<Boolean>): Prop =
 
 class Prop(val run: (MaxSize, TestCases, RNG) -> Result) {
 
-
     fun and(prop: Prop): Prop = Prop { max, n, rng ->
         val result = run(max, n, rng)
         if (result == Passed) prop.run(max, n, rng)
@@ -95,8 +93,6 @@ class Prop(val run: (MaxSize, TestCases, RNG) -> Result) {
         if (result == Passed) result
         else prop.run(max, n, rng)
     }
-
-
 }
 
 sealed class Result {

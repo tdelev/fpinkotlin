@@ -1,4 +1,4 @@
-package p3
+package datastructures
 
 sealed class List<out T> {
 
@@ -17,7 +17,7 @@ sealed class List<out T> {
 
     fun <R> foldRight(identity: R, f: (T, R) -> R): R = when (this) {
         Nil -> identity
-        is Cons -> f(this.head, foldRight(this.tail, identity, f))
+        is Cons -> f(this.head, foldRight(identity, f))
     }
 
     fun all(predicate: (T) -> Boolean): Boolean =
@@ -26,36 +26,47 @@ sealed class List<out T> {
     fun any(predicate: (T) -> Boolean): Boolean =
             foldRight(false, { element, exist -> predicate(element) || exist })
 
+    fun <R> foldLeft(identity: R, f: (T, R) -> R): R {
+        tailrec fun flAcc(acc: R): R =
+                when (this) {
+                    Nil -> acc
+                    is Cons -> {
+                        val result = f(this.head, acc)
+                        flAcc(result)
+                    }
+                }
+
+        return flAcc(identity)
+    }
+
+    fun drop(n: Int): List<T> =
+            when (n) {
+                0 -> this
+                else -> drop(n - 1)
+            }
+
+    fun dropWhile(predicate: (T) -> Boolean): List<T> =
+            when (this) {
+                Nil -> this
+                is Cons -> when (predicate(this.head)) {
+                    true -> dropWhile(predicate)
+                    else -> this
+                }
+            }
+
+    fun filter(predicate: (T) -> Boolean): List<T> =
+            foldRight(Nil as List<T>, { element, result ->
+                if (predicate(element)) Cons(element, result)
+                else result
+            })
+
+    val length = foldRight(0, { _, count -> count + 1 })
+
+    val reverse = foldLeft(Nil as List<T>, { x, y -> Cons(x, y) })
 }
 
 object Nil : List<Nothing>()
 class Cons<out T>(val head: T, val tail: List<T>) : List<T>()
-
-fun sum(ints: List<Int>): Int = foldRight(ints, 0, { x, y -> x + y })
-val sumF = { list: List<Int> -> foldLeft(list, 0, { x, y -> x + y }) }
-
-fun product(doubles: List<Double>): Double = when (doubles) {
-    Nil -> 1.0
-    is Cons -> product(doubles.tail) * doubles.head
-}
-
-fun <T, R> foldRight(list: List<T>, identity: R, f: (T, R) -> R): R = when (list) {
-    Nil -> identity
-    is Cons -> f(list.head, foldRight(list.tail, identity, f))
-}
-
-fun <T, R> foldLeft(list: List<T>, identity: R, f: (T, R) -> R): R {
-    tailrec fun flAcc(list: List<T>, acc: R): R =
-            when (list) {
-                Nil -> acc
-                is Cons -> {
-                    val result = f(list.head, acc)
-                    flAcc(list.tail, result)
-                }
-            }
-
-    return flAcc(list, identity)
-}
 
 fun <T> apply(vararg list: T): List<T> {
     if (list.isEmpty()) return Nil
@@ -65,29 +76,6 @@ fun <T> apply(vararg list: T): List<T> {
 fun <T> setHead(element: T, list: List<T>): List<T> =
         Cons(element, list.tail())
 
-fun <T> drop(list: List<T>, n: Int): List<T> =
-        when (n) {
-            0 -> list
-            else -> drop(list.tail(), n - 1)
-        }
-
-fun <T> dropWhile(list: List<T>, predicate: (T) -> Boolean): List<T> =
-        when (list) {
-            Nil -> Nil
-            is Cons -> when (predicate(list.head)) {
-                true -> dropWhile(list.tail, predicate)
-                else -> list
-            }
-        }
-
-fun <T> append(list1: List<T>, list2: List<T>): List<T> =
-        when (list1) {
-            Nil -> list2
-            is Cons -> Cons(list1.head, append(list1.tail, list2))
-        }
-
-fun <T> appendFR(list1: List<T>, list2: List<T>): List<T> =
-        foldRight(list1, list2, { element, list -> Cons(element, list) })
 
 fun <T> init(list: List<T>): List<T> =
         when (list) {
@@ -98,11 +86,11 @@ fun <T> init(list: List<T>): List<T> =
             }
         }
 
-fun <T> length(list: List<T>) = foldRight(list, 0, { x, y -> 1 + y })
-fun <T> reverse(list: List<T>) = foldLeft<T, List<T>>(list, Nil, { x, y -> Cons(x, y) })
+fun <T> append(list1: List<T>, list2: List<T>): List<T> =
+        list1.foldRight(list2, { element, left -> Cons(element, left) })
 
 fun <T> concat(list: List<List<T>>): List<T> {
-    return foldRight<List<T>, List<T>>(list, Nil, { element, result ->
+    return list.foldRight(Nil as List<T>, { element, result ->
         append(element, result)
     })
 }
@@ -115,18 +103,12 @@ fun <T> fill(n: Int, element: T): List<T> {
     return fillAcc(n, Nil)
 }
 
-
 fun transformInt(list: List<Int>): List<Int> =
-        foldRight<Int, List<Int>>(list, Nil, { element, result -> Cons(element + 1, result) })
+        list.foldRight(Nil as List<Int>, { element, result -> Cons(element + 1, result) })
 
 fun doubleList(list: List<Double>): List<String> =
-        foldRight<Double, List<String>>(list, Nil, { element, result -> Cons(element.toString(), result) })
+        list.foldRight(Nil as List<String>, { element, result -> Cons(element.toString(), result) })
 
-fun <T, R> map(list: List<T>, f: (T) -> R): List<R> =
-        foldRight<T, List<R>>(list, Nil, { element, result -> Cons(f(element), result) })
-
-fun <T> filter(list: List<T>, f: (T) -> Boolean): List<T> =
-        foldRight<T, List<T>>(list, Nil, { element, result -> if (f(element)) Cons(element, result) else result })
 
 fun pairwise(list1: List<Int>, list2: List<Int>): List<Int> = when (list1) {
     Nil -> list2

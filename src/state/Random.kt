@@ -1,12 +1,12 @@
-package p6
+package state
 
-import p3.Cons
-import p3.List
-import p3.Nil
-import p6.Random.double
-import p6.Random.ints
-import p6.Random.nonNegativeEven
-import p6.Random.rollDie
+import datastructures.Cons
+import datastructures.List
+import datastructures.Nil
+import state.Random.double
+import state.Random.ints
+import state.Random.nonNegativeEven
+import state.Random.rollDie
 
 
 typealias StateType<S, T> = (S) -> Pair<T, S>

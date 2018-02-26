@@ -1,7 +1,7 @@
-package p4
+package errorhandling
 
-import p3.Cons
-import p3.Nil
+import datastructures.Cons
+import datastructures.Nil
 
 sealed class Either<out E, out T> {
     fun <R> map(f: (T) -> R): Either<E, R> =
@@ -9,7 +9,6 @@ sealed class Either<out E, out T> {
                 is Left -> Left(this.value)
                 is Right -> Right(f(this.value))
             }
-
 
     override fun toString(): String =
             when (this) {
@@ -40,7 +39,7 @@ fun <E, T1, T2, R> Either<E, T1>.map2(second: Either<E, T2>, f: (T1, T2) -> R): 
             }
         }
 
-fun <E, T, R> traverse(list: p3.List<T>, f: (T) -> Either<E, R>): Either<E, p3.List<R>> =
+fun <E, T, R> traverse(list: datastructures.List<T>, f: (T) -> Either<E, R>): Either<E, datastructures.List<R>> =
         when (list) {
             Nil -> Right(Nil)
             is Cons -> f(list.head).map2(traverse(list.tail, f), { first, second ->
@@ -48,7 +47,7 @@ fun <E, T, R> traverse(list: p3.List<T>, f: (T) -> Either<E, R>): Either<E, p3.L
             })
         }
 
-fun <E, T> sequence(list: p3.List<Either<E, T>>): Either<E, p3.List<T>> =
+fun <E, T> sequence(list: datastructures.List<Either<E, T>>): Either<E, datastructures.List<T>> =
         traverse(list, { it })
 
 class Left<out E>(val value: E) : Either<E, Nothing>()

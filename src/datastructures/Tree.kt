@@ -1,6 +1,4 @@
-package p3
-
-import java.lang.Math.max
+package datastructures
 
 sealed class Tree<out T> {
     fun size(): Int =

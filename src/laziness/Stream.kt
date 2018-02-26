@@ -1,10 +1,10 @@
-package p5
+package laziness
 
-import p3.List
-import p3.Nil
-import p4.None
-import p4.Option
-import p4.Some
+import datastructures.List
+import datastructures.Nil
+import errorhandling.None
+import errorhandling.Option
+import errorhandling.Some
 
 sealed class Stream<out T> {
     fun headOption(): Option<T> =
@@ -14,12 +14,12 @@ sealed class Stream<out T> {
             }
 
     fun headOptionFR(): Option<T> =
-            foldRight({ None as Option<T> }, { left, right -> Some(left) })
+            foldRight<Option<T>>({ None }, { left, _ -> Some(left) })
 
     fun toList(): List<T> =
             when (this) {
                 Empty -> Nil
-                is Cons -> p3.Cons(this.head(), this.tail().toList())
+                is Cons -> datastructures.Cons(this.head(), this.tail().toList())
             }
 
     fun take(n: Int): Stream<T> =
@@ -77,7 +77,7 @@ sealed class Stream<out T> {
             })
 
     fun takeWhileFR(predicate: (T) -> Boolean): Stream<T> =
-            foldRight({ Empty as Stream<T> }, { left, right ->
+            foldRight<Stream<T>>({ Empty }, { left, right ->
                 if (predicate(left)) cons(left, right())
                 else Empty
             })
@@ -92,14 +92,14 @@ sealed class Stream<out T> {
             foldRight({ false }, { left, right -> predicate(left) || right() })
 
     fun find(predicate: (T) -> Boolean): Option<T> =
-            foldRight({ None as Option<T> },
+            foldRight<Option<T>>({ None },
                     { left, right -> if (predicate(left)) Some(left) else right() })
 
     fun forAll(predicate: (T) -> Boolean): Boolean =
             foldRight({ true }, { left, right -> predicate(left) && right() })
 
     fun <R> map(f: (T) -> R): Stream<R> =
-            foldRight({ Empty as Stream<R> }, { left, right -> cons(f(left), right()) })
+            foldRight<Stream<R>>({ Empty }, { left, right -> cons(f(left), right()) })
 
     fun <R> mapU(f: (T) -> R): Stream<R> =
             unfold(this, { stream ->
@@ -110,16 +110,14 @@ sealed class Stream<out T> {
             })
 
     fun filter(predicate: (T) -> Boolean): Stream<T> =
-            foldRight({ Empty as Stream<T> }, { left, right ->
+            foldRight<Stream<T>>({ Empty }, { left, right ->
                 if (!predicate(left)) cons(left, right())
                 else right()
             })
 
-    fun <T> Stream<T>.append(element: () -> Stream<T>): Stream<T> =
-            foldRight(element, { left, right -> cons(left, right()) })
 
     fun <R> flatMap(f: (T) -> Stream<R>): Stream<R> =
-            foldRight({ Empty as Stream<R> }, { left, right -> f(left).append(right) })
+            foldRight<Stream<R>>({ Empty }, { left, right -> f(left).append(right) })
 
     fun <T> startsWith(other: Stream<T>): Boolean {
         return zipAll(other, { a, b -> Pair(a, b) })
@@ -189,6 +187,9 @@ fun fibsU() = unfold(Pair(0, 1), { state ->
     Some(Pair(Pair(state.second, state.first + state.second),
             Pair(state.second, state.first + state.second)))
 })
+
+fun <T> Stream<T>.append(element: () -> Stream<T>): Stream<T> =
+        foldRight(element, { left, right -> cons(left, right()) })
 
 fun <A, B, R> Stream<A>.zipWith(stream: Stream<B>, f: (A, B) -> R): Stream<R> =
         unfold(Pair(this, stream), {

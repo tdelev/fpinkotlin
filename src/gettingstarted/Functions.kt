@@ -1,13 +1,11 @@
-package p2
-
-import p2.MyModule.toStr
-
+package gettingstarted
 
 fun <A, B, C> ((A, B) -> C).curry(): (A) -> ((B) -> C) =
         { a: A -> { b: B -> this(a, b) } }
 
 
 object MyModule {
+
     fun abs(x: Int) = if (x < 0) -x else x
 
     fun factorial(x: Int): Int {
@@ -28,7 +26,7 @@ object MyModule {
 
     fun format(msg: String, x: Int, f: (Int) -> Int): String = msg.format(x, f(x))
 
-    fun formatAbsolute(x: Int) = { x: Int -> format("The abs value of %d is %d", x, MyModule::abs) }
+    val formatAbsolute = { x: Int -> format("The abs value of %d is %d", x, MyModule::abs) }
 
     fun formatAbs(x: Int): String {
         /*val msg = "The absolute value of %d is %d"
@@ -57,11 +55,9 @@ object MyModule {
     fun isSortedAsc() =
             partial2<Array<Int>, (Int, Int) -> Boolean, Boolean>({ a: Int, b: Int -> a < b }, this::isSorted)
 
-    fun <A, B, C> partial1(a: A, f: (A, B) -> C): (B) -> C
-            = { f(a, it) }
+    fun <A, B, C> partial1(a: A, f: (A, B) -> C): (B) -> C = { f(a, it) }
 
-    fun <A, B, C> partial2(b: B, f: (A, B) -> C): (A) -> C
-            = { a: A -> f(a, b) }
+    fun <A, B, C> partial2(b: B, f: (A, B) -> C): (A) -> C = { f(it, b) }
 
     fun <A, B, C> curry(f: (A, B) -> C): (A) -> ((B) -> C) =
             { a: A -> { b: B -> f(a, b) } }
@@ -73,6 +69,7 @@ object MyModule {
             { a: A -> f(g(a)) }
 
     fun sum(a: Int, b: Int) = a + b
+
     fun mul(a: Int, b: Int) = a * b
 
     fun toStr(x: Int): String = "Str $x"
@@ -82,9 +79,8 @@ object MyModule {
     val intToDouble = compose(this::toDouble, this::toStr)
 
     val sumX = curry(this::sum)
-    val sumTwo = uncurry(sumX)
 
-    fun sum5(a: Int) = partial1(5, this::sum)
+    val sumTwo = uncurry(sumX)
 }
 
 fun main(args: Array<String>) {
@@ -100,5 +96,5 @@ fun main(args: Array<String>) {
     println(MyModule.compose(MyModule.sumX(10), MyModule.curry(MyModule::mul)(5))(6))
     println(MyModule.intToDouble(12))
     println(MyModule::toStr.also() { MyModule::toDouble }(12))
-    println({a: Int, b: Int -> a + b}.curry()(1)(12))
+    println({ a: Int, b: Int -> a + b }.curry()(1)(12))
 }

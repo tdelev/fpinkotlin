@@ -1,8 +1,8 @@
-package p6
+package state
 
-import p3.Cons
-import p3.List
-import p3.Nil
+import datastructures.Cons
+import datastructures.List
+import datastructures.Nil
 
 class State<S, out A>(val run: (S) -> Pair<A, S>) {
 

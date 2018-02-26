@@ -1,7 +1,7 @@
-package p7
+package parallelism
 
-import p7.Par.fork
-import p7.Par.map2
+import parallelism.Par.fork
+import parallelism.Par.map2
 import java.util.concurrent.Executors
 
 fun sum(ints: List<Int>): ParType<Int> =

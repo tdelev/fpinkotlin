@@ -1,8 +1,8 @@
-package p4
+package errorhandling
 
-import p3.Cons
-import p3.Nil
-import p3.apply
+import datastructures.Cons
+import datastructures.Nil
+import datastructures.apply
 
 sealed class Option<out T> {
     inline fun <B : Any> map(f: (T) -> B): Option<B> =
@@ -57,7 +57,7 @@ fun <A, B, C> map2(a: Option<A>, b: Option<B>, f: (A, B) -> C): Option<C> =
             else -> None
         }
 
-fun <T> sequence(list: p3.List<Option<T>>): Option<p3.List<T>> =
+fun <T> sequence(list: datastructures.List<Option<T>>): Option<datastructures.List<T>> =
         when (list) {
             Nil -> Some(Nil)
             is Cons -> list.head.flatMap { h ->

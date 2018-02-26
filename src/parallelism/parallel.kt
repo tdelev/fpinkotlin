@@ -1,4 +1,4 @@
-package p7
+package parallelism
 
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 
 typealias ParType<A> = (ExecutorService) -> Future<A>
 
-class UnitFuture<A>(val a: A) : Future<A> {
+class UnitFuture<A>(private val a: A) : Future<A> {
     override fun isDone() = true
 
     override fun get() = a
@@ -18,6 +18,7 @@ class UnitFuture<A>(val a: A) : Future<A> {
 
     override fun isCancelled() = false
 }
+
 object Par {
     fun <A> unit(element: A): ParType<A> = { UnitFuture(element) }
 

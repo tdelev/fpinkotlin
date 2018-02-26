@@ -1,17 +1,18 @@
-package p8
+package testing
 
-import p3.List
-import p3.fill
-import p4.Some
-import p5.Stream
-import p5.from
-import p5.unfold
-import p5.zipWith
-import p6.RNG
-import p6.Random
-import p6.State
-import p6.StateI
-import p7.Par
+import datastructures.List
+import datastructures.fill
+import errorhandling.Some
+import laziness.Stream
+import laziness.from
+import laziness.unfold
+import laziness.zipWith
+import state.RNG
+import state.Random
+import state.State
+import state.StateI
+import parallelism.Par
+import parallelism.ParType
 import java.util.concurrent.Executors
 import kotlin.math.absoluteValue
 import kotlin.math.min
@@ -70,9 +71,15 @@ fun <A> forAll(gen: (Int) -> Gen<A>, predicate: (A) -> Boolean): Prop = Prop { m
 fun <A> forAll(sgen: SGen<A>, predicate: (A) -> Boolean): Prop =
         forAll(sgen.forSize, predicate)
 
+fun <A> forAllPar(gen: Gen<A>, f: (A) -> ParType<Boolean>): Prop =
+        forAll(Generator.S.combine(gen), { f(it.second)(it.first).get() })
+
 fun check(predicate: () -> Boolean): Prop = Prop { _, _, _ ->
     if (predicate()) Proved else Failed("", 0)
 }
+
+fun checkPar(par: ParType<Boolean>): Prop =
+        forAllPar(Generator.unit(1), { par })
 
 class Prop(val run: (MaxSize, TestCases, RNG) -> Result) {
 
@@ -113,9 +120,15 @@ class Gen<A>(val sample: State<RNG, A>) {
     fun <B> map(f: (A) -> B): Gen<B> =
             Gen(sample.map(f))
 
+    fun <B, C> map2(gen: Gen<B>, f: (A, B) -> C): Gen<C> =
+            Gen(sample.map2(gen.sample, f))
+
     fun <B> flatMap(f: (A) -> Gen<B>): Gen<B> {
         return Gen(sample.flatMap { f(it).sample })
     }
+
+    fun <B> combine(gen: Gen<B>): Gen<Pair<A, B>> =
+            Gen(this.sample.map2(gen.sample, { a, b -> Pair(a, b) }))
 
     fun listOfN(n: Int): Gen<List<A>> =
             Gen(StateI.sequence(fill(n, sample)))
@@ -158,6 +171,9 @@ object Generator {
         return Gen(State(Random.double)).flatMap { if (it < threshold) g1.first else g2.first }
     }
 
+    val S = weighted(Pair(choose(1, 4).map({ Executors.newFixedThreadPool(it) }), .75),
+            Pair(unit(Executors.newCachedThreadPool()), .25))
+
     fun <A> listOf(gen: Gen<A>): SGen<List<A>> =
             SGen({ n -> gen.listOfN(n) })
 
@@ -175,6 +191,10 @@ fun run(prop: Prop, maxSize: Int = 100, testCases: Int = 100,
         Proved -> println("OK, proved property.")
     }
 }
+
+fun <A> equal(pa: ParType<A>, pb: ParType<A>): ParType<Boolean> =
+        Par.map2(pa, pb, { a, b -> a == b })
+
 
 fun main(args: Array<String>) {
     val generator = Random.SimpleRNG(System.currentTimeMillis())
@@ -195,4 +215,17 @@ fun main(args: Array<String>) {
         Par.map(Par.unit(1), { it + 1 })(ES).get() == Par.unit(2)(ES).get()
     })
     run(p1)
+
+    val p2 = checkPar {
+        equal(
+                Par.map(Par.unit(1), { it + 1 }),
+                Par.unit(2)
+        )(it)
+    }
+
+    val pint = Generator.choose(0, 10).map({ Par.unit(1) })
+    val p4 = forAllPar(pint, {
+        equal(Par.map(it, { it }), it)
+    })
+    run(p4)
 }

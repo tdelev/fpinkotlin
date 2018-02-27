@@ -7,6 +7,7 @@ import errorhandling.Option
 import errorhandling.Some
 
 sealed class Stream<out T> {
+
     fun headOption(): Option<T> =
             when (this) {
                 Empty -> None
@@ -158,6 +159,7 @@ fun <T> apply(vararg args: T): Stream<T> =
         else cons(args[0], apply(*args.sliceArray(1 until args.size)))
 
 val ones: Cons<Int> by lazy { Cons({ 1 }, { ones }) }
+
 fun <T> constant(element: T): Stream<T> =
         Cons({ element }, { constant(element) })
 
@@ -172,9 +174,9 @@ fun fibs(): Stream<Int> {
 }
 
 fun <A, S> unfold(initial: S, f: (S) -> Option<Pair<A, S>>): Stream<A> {
-    val fval = f(initial)
-    return when (fval) {
-        is Some -> Cons({ fval.value.first }, { unfold(fval.value.second, f) })
+    val option = f(initial)
+    return when (option) {
+        is Some -> Cons({ option.value.first }, { unfold(option.value.second, f) })
         else -> Empty
     }
 }

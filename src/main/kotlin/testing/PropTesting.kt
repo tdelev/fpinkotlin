@@ -178,13 +178,20 @@ object Generator {
 
 }
 
+val ANSI_GREEN = "\u001B[32m"
+val ANSI_RED = "\u001B[31m"
+val ANSI_RESET = "\u001B[0m"
+
+fun success(message: String) = println("$ANSI_GREEN$message$ANSI_RESET")
+fun error(message: String) = println("$ANSI_RED$message$ANSI_RESET")
+
 fun run(prop: Prop, maxSize: Int = 100, testCases: Int = 100,
         rng: RNG = Random.SimpleRNG(System.currentTimeMillis())) {
     val result = prop.run(maxSize, testCases, rng)
     when (result) {
-        Passed -> println("OK, passed $testCases tests.")
-        is Failed -> println("Falsified after ${result.successes} passed tests:\n${result.failure}")
-        Proved -> println("OK, proved property.")
+        Passed -> success("OK, passed $testCases tests.")
+        is Failed -> error("Falsified after ${result.successes} passed tests:\n${result.failure}")
+        Proved -> success("OK, proved property.")
     }
 }
 

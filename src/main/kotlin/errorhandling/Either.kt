@@ -5,17 +5,13 @@ import datastructures.Nil
 
 sealed class Either<out E, out T> {
     fun <R> map(f: (T) -> R): Either<E, R> =
-            when (this) {
-                is Left -> Left(this.value)
-                is Right -> Right(f(this.value))
-            }
+            flatMap { Right(f(it)) }
 
     override fun toString(): String =
             when (this) {
                 is Left -> "Left($value)"
                 is Right -> "Right($value)"
             }
-
 }
 
 fun <E, T, R> Either<E, T>.flatMap(f: (T) -> Either<E, R>): Either<E, R> =

@@ -2,6 +2,7 @@ package testing
 
 import datastructures.List
 import datastructures.fill
+import datastructures.reduce
 import errorhandling.Some
 import errorhandling.orElse
 import laziness.Stream
@@ -61,9 +62,9 @@ fun <A> forAll(gen: (Int) -> Gen<A>, predicate: (A) -> Boolean): Prop = Prop { m
         Prop { max, _, rng ->
             it.run(max, casesPerSize, rng)
         }
-    }.toList().foldRight(Prop { _, _, _ -> Passed }, { a, b ->
+    }.toList().reduce({ a, b ->
         b.and(a)
-    })
+    }).orElse(Prop { _, _, _ -> Passed })
     prop.run(max, n, rng)
 }
 

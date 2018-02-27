@@ -1,7 +1,7 @@
 package state
 
 import datastructures.List
-import datastructures.apply
+import datastructures.list
 
 interface Input
 object Coin : Input
@@ -39,7 +39,7 @@ object Candy {
 }
 
 fun main(args: Array<String>) {
-    val state = Candy.simulateMachine(apply(Coin, Turn, Coin, Turn))
+    val state = Candy.simulateMachine(list(Coin, Turn, Coin, Turn))
     val machine = state(Machine(true, 5, 0))
     println(machine)
 }

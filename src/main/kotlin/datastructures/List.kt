@@ -1,5 +1,9 @@
 package datastructures
 
+import errorhandling.None
+import errorhandling.Option
+import errorhandling.Some
+
 sealed class List<out T> {
 
     override fun toString(): String = when (this) {
@@ -68,14 +72,27 @@ sealed class List<out T> {
 object Nil : List<Nothing>()
 class Cons<out T>(val head: T, val tail: List<T>) : List<T>()
 
-fun <T> apply(vararg list: T): List<T> {
-    if (list.isEmpty()) return Nil
-    return Cons(list[0], apply(*list.sliceArray(1 until list.size)))
+fun <T> List<T>.equal(list: List<T>): Boolean {
+    return when (this) {
+        Nil -> when (list) {
+            Nil -> true
+            else -> false
+        }
+        is Cons -> when (list) {
+            Nil -> false
+            is Cons -> if (this.head == list.head) this.tail.equal(list.tail)
+            else false
+        }
+    }
 }
 
-fun <T> setHead(element: T, list: List<T>): List<T> =
-        Cons(element, list.tail())
+fun <T> list(vararg list: T): List<T> {
+    if (list.isEmpty()) return Nil
+    return Cons(list[0], list(*list.sliceArray(1 until list.size)))
+}
 
+fun <T> List<T>.setHead(element: T): List<T> =
+        Cons(element, this.tail())
 
 fun <T> init(list: List<T>): List<T> =
         when (list) {
@@ -86,14 +103,20 @@ fun <T> init(list: List<T>): List<T> =
             }
         }
 
-fun <T> append(list1: List<T>, list2: List<T>): List<T> =
-        list1.foldRight(list2, { element, left -> Cons(element, left) })
+fun <T> List<T>.append(list: List<T>): List<T> =
+        this.foldRight(list, { element, left -> Cons(element, left) })
 
 fun <T> concat(list: List<List<T>>): List<T> {
     return list.foldRight(Nil as List<T>, { element, result ->
-        append(element, result)
+        result.append(element)
     })
 }
+
+fun <T> List<T>.reduce(f: (T, T) -> T): Option<T> =
+        when (this) {
+            Nil -> None
+            is Cons -> Some(this.tail.foldRight(this.head, f))
+        }
 
 fun <T> fill(n: Int, element: T): List<T> {
     tailrec fun fillAcc(n: Int, acc: List<T>): List<T> =
@@ -118,27 +141,10 @@ fun pairwise(list1: List<Int>, list2: List<Int>): List<Int> = when (list1) {
     }
 }
 
-fun <T> zipWith(list1: List<T>, list2: List<T>, f: (T, T) -> T): List<T> = when (list1) {
-    Nil -> list2
-    is Cons -> when (list2) {
-        Nil -> list1
-        is Cons -> Cons(f(list1.head, list2.head), zipWith(list1.tail, list2.tail, f))
+fun <T> List<T>.zipWith(list: List<T>, f: (T, T) -> T): List<T> = when (this) {
+    Nil -> list
+    is Cons -> when (list) {
+        Nil -> this
+        is Cons -> Cons(f(this.head, list.head), this.tail.zipWith(list.tail, f))
     }
-}
-
-fun main(args: Array<String>) {
-    /*var list: List<Int> = Nil
-    for (i in 1..10) {
-        list = Cons(i, list)
-    }*/
-/*    val list1 = apply(1, 2, 3, 99, 100)
-    val list2 = apply(5, 6, 7)
-    val list3 = apply(8, 9, 10)
-    val l = apply(list1, list2, list3)
-    println(l)
-    println(filter(map(list1, { x -> x * 10 }), { it < 30 }))
-    println(pairwise(list1, list2))
-    println(zipWith(list1, list2, { x, y -> x * y }))*/
-    val list = apply(1, 2, 3)
-    println(list)
 }

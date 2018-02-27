@@ -2,7 +2,7 @@ package errorhandling
 
 import datastructures.Cons
 import datastructures.Nil
-import datastructures.apply
+import datastructures.list
 
 sealed class Option<out T> {
 
@@ -68,7 +68,7 @@ fun <T> sequence(list: datastructures.List<Option<T>>): Option<datastructures.Li
         }
 
 fun main(args: Array<String>) {
-    val list = apply(Some(1), Some(2), Some(3))
+    val list = list(Some(1), Some(2), Some(3))
     sequence(list).map {
         println(it)
     }

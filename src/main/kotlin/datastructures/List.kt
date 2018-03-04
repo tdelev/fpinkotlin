@@ -72,6 +72,8 @@ sealed class List<out T> {
 object Nil : List<Nothing>()
 class Cons<out T>(val head: T, val tail: List<T>) : List<T>()
 
+fun <T> empty() = Nil as List<T>
+
 fun <T> List<T>.equal(list: List<T>): Boolean {
     return when (this) {
         Nil -> when (list) {
@@ -93,6 +95,11 @@ fun <T> list(vararg list: T): List<T> {
 
 fun <T> List<T>.setHead(element: T): List<T> =
         Cons(element, this.tail())
+/*
+fun <T> List<T>.toArray(): Array<T> {
+    val length = this.length
+    val result = Array<Any>()
+}*/
 
 fun <T> init(list: List<T>): List<T> =
         when (list) {

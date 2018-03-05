@@ -40,3 +40,13 @@ class JsonParser(parser: Parser<Json>) : AbstractParser<Json>(parser) {
     val value = literal.or({ obj }).or({ array })
 
 }
+
+object JSON {
+    fun getParser(parser: IParser<ForParser>): ParserC<Json> {
+
+        val literal = parser.map(parser.string("a"), { JString(it) })
+
+        return parser.root(literal).fix()
+    }
+
+}

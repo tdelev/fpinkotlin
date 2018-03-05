@@ -7,10 +7,11 @@ import datastructures.list
 sealed class Option<out T> {
 
     fun <B : Any> map(f: (T) -> B): Option<B> =
-            when (this) {
+            /*when (this) {
                 is Some -> Some(f(this.value))
                 None -> None
-            }
+            }*/
+            flatMap { unit(f(it)) }
 
     fun <B> flatMap(f: (T) -> Option<B>): Option<B> =
             when (this) {
@@ -41,6 +42,8 @@ fun <T> Option<T>.orElse(other: T): T =
             None -> other
             is Some -> this.value
         }
+
+fun <T> unit(a: T) = Some(a)
 
 fun variance(list: List<Double>): Option<Double> =
         mean(list).flatMap { m -> mean(list.map { Math.pow(it - m, 2.0) }) }

@@ -89,12 +89,17 @@ fun main(args: Array<String>) {
     // println(MyModule.isSorted(arrayOf(5, 3, 3), { a, b -> a >= b }))
     //println(MyModule.partial1(5, { x: Int, y: Int -> x + y })(10))
     //println(MyModule.isSortedAsc()(arrayOf(1, 2, 3)))
-    println(MyModule.sumX(10)(12))
+   /* println(MyModule.sumX(10)(12))
     println(MyModule.sumTwo(1, 2))
     println(MyModule.curry({ x: Int, y: Int -> x * y })(5)(12))
     println(MyModule.uncurry(MyModule.curry({ x: Int, y: Int -> x * y }))(5, 12))
     println(MyModule.compose(MyModule.sumX(10), MyModule.curry(MyModule::mul)(5))(6))
     println(MyModule.intToDouble(12))
     println(MyModule::toStr.also() { MyModule::toDouble }(12))
-    println({ a: Int, b: Int -> a + b }.curry()(1)(12))
+    println({ a: Int, b: Int -> a + b }.curry()(1)(12))*/
+    val sum5 = MyModule.partial1(5, MyModule::sum)
+    val sumOne = MyModule.curry(MyModule::sum)
+    val sum20 = MyModule::sum.curry()
+
+
 }

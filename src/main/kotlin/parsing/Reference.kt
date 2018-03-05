@@ -19,11 +19,27 @@ object Reference : IParser<ForParser> {
     }
 
     override fun string(s: String): Kind<ForParser, String> {
-        return ParserC({ _ -> Success("", 0) })
+        val msg = "'$s'"
+
+        return ParserC({ state ->
+            val i = firstNonmatchingIndex(state.location.input, s, state.location.offset)
+            if (i == -1) {
+                Success(s, s.length)
+            } else {
+                Failure(state.location.toError(msg), i != 0)
+            }
+        })
     }
 
     override fun regex(r: Regex): Kind<ForParser, String> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val msg = "regex $r"
+        return ParserC({ state ->
+            val match = r.find(state.location.input)
+            when (match) {
+                null -> Failure(state.location.toError(msg), false)
+                else -> Success(match.value, match.value.length)
+            }
+        })
     }
 
     override fun <A, B> flatMap(parser: Kind<ForParser, A>, f: (A) -> Kind<ForParser, B>): Kind<ForParser, B> {
@@ -31,11 +47,25 @@ object Reference : IParser<ForParser> {
     }
 
     override fun <A> slice(parser: Kind<ForParser, A>): Kind<ForParser, String> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return ParserC({ state ->
+            val parserInstance = parser.fix().parser
+            val parseResult = parserInstance(state)
+            when (parseResult) {
+                is Success -> Success(state.slice(parseResult.length), parseResult.length)
+                is Failure -> parseResult
+            }
+        })
     }
 
     override fun <A> or(parser1: Kind<ForParser, A>, parser2: () -> Kind<ForParser, A>): Kind<ForParser, A> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return ParserC({ state ->
+            val parser = parser1.fix().parser
+            val parseResult = parser(state)
+            when (parseResult) {
+                is Failure -> parser2().fix().parser(state)
+                else -> parseResult
+            }
+        })
     }
 
     override fun <A> label(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
@@ -48,5 +78,18 @@ object Reference : IParser<ForParser> {
 
     override fun <A> attempt(parser: Kind<ForParser, A>): Kind<ForParser, A> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    /** Returns -1 if s1.startsWith(s2), otherwise returns the
+     * first index where the two strings differed. If s2 is
+     * longer than s1, returns s1.length. */
+    fun firstNonmatchingIndex(s1: String, s2: String, offset: Int): Int {
+        var i = 0
+        while (i < s1.length && i < s2.length) {
+            if (s1[i + offset] != s2[i]) return i
+            ++i
+        }
+        return if (s1.length - offset >= s2.length) -1
+        else s1.length - offset
     }
 }

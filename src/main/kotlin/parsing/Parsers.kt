@@ -2,9 +2,51 @@ package parsing
 
 import datastructures.List
 import datastructures.empty
+import datastructures.list
 import datastructures.setHead
 import errorhandling.Either
 import higherkind.Kind
+
+data class ParseState(val location: Location) {
+
+    val input: String
+        get() = location.input.substring(location.offset)
+
+    fun slice(n: Int) = location.input.substring(location.offset, location.offset + n)
+
+    fun advanceBy(numChars: Int): ParseState =
+            ParseState(Location(location.input, location.offset + numChars))
+}
+
+sealed class Result<out A> {
+
+}
+
+data class Success<out A>(val result: A, val length: Int) : Result<A>() {
+
+}
+
+data class Failure(val error: ParseError, val isCommitted: Boolean) : Result<Nothing>()
+
+data class ParseError(val stack: List<Pair<Location, String>>) {
+
+}
+
+data class Location(val input: String, val offset: Int = 0) {
+    val line: Int by lazy { input.slice(0..offset + 1).count { it == '\n' } }
+    val col: Int by lazy {
+        val last = input.slice(0..offset + 1).lastIndexOf('\n')
+        when (last) {
+            -1 -> offset + 1
+            else -> offset - last
+        }
+    }
+
+    fun toError(msg: String) = ParseError(list(Pair(this, msg)))
+}
+
+fun errorLocation(e: ParseError): Location = TODO()
+fun errorMessage(e: ParseError): String = TODO()
 
 interface IParser<F> {
 

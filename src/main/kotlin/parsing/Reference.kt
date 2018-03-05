@@ -37,4 +37,16 @@ object Reference : IParser<ForParser> {
     override fun <A> or(parser1: Kind<ForParser, A>, parser2: () -> Kind<ForParser, A>): Kind<ForParser, A> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
+    override fun <A> label(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun <A> scope(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun <A> attempt(parser: Kind<ForParser, A>): Kind<ForParser, A> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 }

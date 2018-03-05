@@ -67,6 +67,11 @@ sealed class List<out T> {
     val length = { foldRight(0, { _, count -> count + 1 }) }
 
     val reverse = { foldLeft<List<T>>(Nil, { x, y -> Cons(x, y) }) }
+
+    fun head() = when (this) {
+        is Nil -> None
+        is Cons -> Some(this.head)
+    }
 }
 
 object Nil : List<Nothing>()

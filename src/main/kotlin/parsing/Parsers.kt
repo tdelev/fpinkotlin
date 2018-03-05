@@ -5,6 +5,9 @@ import datastructures.empty
 import datastructures.list
 import datastructures.setHead
 import errorhandling.Either
+import errorhandling.Left
+import errorhandling.Right
+import errorhandling.orElse
 import higherkind.Kind
 
 data class ParseState(val location: Location) {
@@ -20,6 +23,30 @@ data class ParseState(val location: Location) {
 
 sealed class Result<out A> {
 
+    fun extract(): Either<ParseError, A> = when (this) {
+        is Success -> Right(this.result)
+        is Failure -> Left(this.error)
+    }
+
+    fun uncommit(): Result<A> = when (this) {
+        is Success -> this
+        is Failure -> Failure(this.error, false)
+    }
+
+    fun addCommit(isCommitted: Boolean): Result<A> = when (this) {
+        is Success -> this
+        is Failure -> Failure(this.error, this.isCommitted || isCommitted)
+    }
+
+    fun mapError(f: (ParseError) -> ParseError): Result<A> = when (this) {
+        is Failure -> Failure(f(this.error), this.isCommitted)
+        is Success -> this
+    }
+
+    fun advanceSuccess(n: Int): Result<A> = when (this) {
+        is Success -> Success(this.result, this.length + n)
+        is Failure -> this
+    }
 }
 
 data class Success<out A>(val result: A, val length: Int) : Result<A>() {
@@ -29,6 +56,8 @@ data class Success<out A>(val result: A, val length: Int) : Result<A>() {
 data class Failure(val error: ParseError, val isCommitted: Boolean) : Result<Nothing>()
 
 data class ParseError(val stack: List<Pair<Location, String>>) {
+    fun label(msg: String) =
+            ParseError(list(stack.head().map { Pair(it.first, msg) }.orElse(Pair(Location("", 0), ""))))
 
 }
 

@@ -1,5 +1,6 @@
 package parsing
 
+import datastructures.setHead
 import errorhandling.Either
 import higherkind.Kind
 
@@ -11,7 +12,9 @@ fun <A> Kind<ForParser, A>.fix() = this as ParserC<A>
 object Reference : IParser<ForParser> {
 
     override fun <A> run(parser: Kind<ForParser, A>, input: String): Either<ParseError, A> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val startState = ParseState(Location(input, 0))
+        val parserInstance = parser.fix().parser
+        return parserInstance(startState).extract()
     }
 
     override fun <A> succeed(a: A): Kind<ForParser, A> {
@@ -43,7 +46,16 @@ object Reference : IParser<ForParser> {
     }
 
     override fun <A, B> flatMap(parser: Kind<ForParser, A>, f: (A) -> Kind<ForParser, B>): Kind<ForParser, B> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return ParserC({ state ->
+            val parserInstance = parser.fix().parser
+            val parseResult = parserInstance(state)
+            when (parseResult) {
+                is Success -> f(parseResult.result).fix().parser(state.advanceBy(parseResult.length))
+                        .addCommit(parseResult.length != 0)
+                        .advanceSuccess(parseResult.length)
+                is Failure -> parseResult
+            }
+        })
     }
 
     override fun <A> slice(parser: Kind<ForParser, A>): Kind<ForParser, String> {
@@ -69,15 +81,24 @@ object Reference : IParser<ForParser> {
     }
 
     override fun <A> label(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return ParserC({ state ->
+            val parserInstance = parser.fix().parser
+            parserInstance(state).mapError { it.label(msg) }
+        })
     }
 
     override fun <A> scope(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return ParserC({ state ->
+            val parserInstance = parser.fix().parser
+            parserInstance(state).mapError { ParseError(it.stack.setHead(Pair(state.location, msg))) }
+        })
     }
 
     override fun <A> attempt(parser: Kind<ForParser, A>): Kind<ForParser, A> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return ParserC({ state ->
+            val parserInstance = parser.fix().parser
+            parserInstance(state).uncommit()
+        })
     }
 
     /** Returns -1 if s1.startsWith(s2), otherwise returns the

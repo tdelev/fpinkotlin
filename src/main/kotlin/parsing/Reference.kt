@@ -9,6 +9,7 @@ data class ParserC<A>(val parser: (ParseState) -> Result<A>) : Kind<ForParser, A
 
 fun <A> Kind<ForParser, A>.fix() = this as ParserC<A>
 
+
 object Reference : IParser<ForParser> {
 
     override fun <A> run(parser: Kind<ForParser, A>, input: String): Either<ParseError, A> {

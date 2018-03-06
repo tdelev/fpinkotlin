@@ -1,6 +1,7 @@
 package parsing
 
 import datastructures.List
+import higherkind.Kind
 
 sealed class Json
 
@@ -11,7 +12,7 @@ data class JBool(val bool: Boolean) : Json()
 data class JArray(val array: List<Json>) : Json()
 data class JObject(val obj: Map<String, Json>) : Json()
 
-class JsonParser(parser: Parser<Json>) : AbstractParser<Json>(parser) {
+/*class JsonParser(parser: Parser<Json>) : AbstractParser<Json>(parser) {
 
     fun token(s: String) = parser.string(s)
 
@@ -39,12 +40,25 @@ class JsonParser(parser: Parser<Json>) : AbstractParser<Json>(parser) {
 
     val value = literal.or({ obj }).or({ array })
 
-}
+}*/
 
 object JSON {
     fun getParser(parser: IParser<ForParser>): ParserC<Json> {
+        fun <A> Kind<ForParser, A>.or(p: () -> Kind<ForParser, A>) = parser.or(this, p)
+        fun <A> Kind<ForParser, A>.scope(msg: String) = parser.scope(msg, this)
+        fun <A, B> Kind<ForParser, A>.to(b: B) = parser.`as`(this, b)
+        fun <A, B> Kind<ForParser, A>.map(f: (A) -> B) = parser.map(this, f)
 
-        val literal = parser.map(parser.string("a"), { JString(it) })
+        fun token(str: String) = parser.token(parser.string(str))
+        val literal = token("null").to(JNull).or({
+            parser.double().map({ JNumber(it) })
+        }).or({
+            parser.escapedQuoted().map({ JString(it) })
+        }).or({
+            token("false").to(JBool(false))
+        }).or({
+            token("true").to(JBool(true))
+        })
 
         return parser.root(literal).fix()
     }

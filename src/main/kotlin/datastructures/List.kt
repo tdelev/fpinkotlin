@@ -99,7 +99,7 @@ fun <T> list(vararg list: T): List<T> {
 }
 
 fun <T> List<T>.setHead(element: T): List<T> = when (this) {
-    is Cons -> Cons(element, this.tail())
+    is Cons -> Cons(element, this)
     is Nil -> Cons(element, Nil)
 }
 /*

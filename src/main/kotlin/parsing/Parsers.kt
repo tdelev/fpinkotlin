@@ -104,11 +104,7 @@ interface IParser<F> {
             map(string(""), { a })
 
     fun <A> many(parser: Kind<F, A>): Kind<F, List<A>> =
-            or(map2(parser, { many(parser) }, { a, list ->
-                println("A: $a")
-                println("List: $list")
-                list.setHead(a)
-            }), { succeed(empty()) })
+            or(map2(parser, { many(parser) }, { a, list -> list.setHead(a) }), { succeed(empty()) })
 
     fun <A> many1(parser: Kind<F, A>): Kind<F, List<A>> =
             map2(parser, { many(parser) }, { a, list -> list.setHead(a) })

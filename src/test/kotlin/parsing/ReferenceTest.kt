@@ -114,7 +114,6 @@ class ReferenceTest {
         val parser = Reference.many1(string("a"))
         val result = Reference.run(parser, input)
         println(result)
-        result.map { assertEquals(Pair("ab", "cd"), it) }
     }
 
     @Test

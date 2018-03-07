@@ -47,6 +47,7 @@ class JSON(private val parser: IParser<ForParser>) {
 
     val array = parser.surround(token("["), token("]"), {
         parser.sep(value, token(",")).map {
+            println("IT: $it")
             JArray(it)
         }.scope("array")
     })
@@ -60,7 +61,6 @@ class JSON(private val parser: IParser<ForParser>) {
 object JSONExample {
     @JvmStatic
     fun main(args: Array<String>) {
-        println("Hello")
         val jsonParser = JSON(Reference)
 
         val jsonTxt = """
@@ -76,5 +76,6 @@ object JSONExample {
 
         val result = Reference.run(jsonParser.parse(), jsonTxt)
         println("Result: $result")
+
     }
 }

@@ -31,16 +31,16 @@ sealed class List<out T> {
             foldRight(false, { element, exist -> predicate(element) || exist })
 
     fun <R> foldLeft(identity: R, f: (T, R) -> R): R {
-        tailrec fun flAcc(acc: R): R =
-                when (this) {
+        tailrec fun flAcc(acc: R, list: List<T>): R =
+                when (list) {
                     Nil -> acc
                     is Cons -> {
-                        val result = f(this.head, acc)
-                        flAcc(result)
+                        val result = f(list.head, acc)
+                        flAcc(result, list.tail)
                     }
                 }
 
-        return flAcc(identity)
+        return flAcc(identity, this)
     }
 
     fun drop(n: Int): List<T> =
@@ -98,8 +98,10 @@ fun <T> list(vararg list: T): List<T> {
     return Cons(list[0], list(*list.sliceArray(1 until list.size)))
 }
 
-fun <T> List<T>.setHead(element: T): List<T> =
-        Cons(element, this.tail())
+fun <T> List<T>.setHead(element: T): List<T> = when (this) {
+    is Cons -> Cons(element, this.tail())
+    is Nil -> Cons(element, Nil)
+}
 /*
 fun <T> List<T>.toArray(): Array<T> {
     val length = this.length

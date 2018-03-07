@@ -9,6 +9,7 @@ import errorhandling.Left
 import errorhandling.Right
 import errorhandling.orElse
 import higherkind.Kind
+import java.util.regex.Pattern
 
 data class ParseState(val location: Location) {
 
@@ -103,7 +104,11 @@ interface IParser<F> {
             map(string(""), { a })
 
     fun <A> many(parser: Kind<F, A>): Kind<F, List<A>> =
-            or(map2(parser, { many(parser) }, { a, list -> list.setHead(a) }), { succeed(empty()) })
+            or(map2(parser, { many(parser) }, { a, list ->
+                println("A: $a")
+                println("List: $list")
+                list.setHead(a)
+            }), { succeed(empty()) })
 
     fun <A> many1(parser: Kind<F, A>): Kind<F, List<A>> =
             map2(parser, { many(parser) }, { a, list -> list.setHead(a) })
@@ -139,7 +144,7 @@ interface IParser<F> {
     fun digits() = regex(Regex("\\d+"))
 
     /** Parser which consumes reluctantly until it encounters the given string. */
-    fun thru(s: String) = regex(Regex(".*?$s"))
+    fun thru(s: String) = regex(Regex(".*?${Pattern.quote(s)}"))
 
     /** Unescaped string literals, like "foo" or "bar". */
     fun quoted() = map(skipLeft(string("\""), { thru("\"") }), { it.dropLast(1) })

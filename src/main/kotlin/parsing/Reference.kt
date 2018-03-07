@@ -38,7 +38,7 @@ object Reference : IParser<ForParser> {
     override fun regex(r: Regex): Kind<ForParser, String> {
         val msg = "regex $r"
         return ParserC({ state ->
-            val match = r.find(state.location.input)
+            val match = r.find(state.input)
             when (match) {
                 null -> Failure(state.location.toError(msg), false)
                 else -> Success(match.value, match.value.length)

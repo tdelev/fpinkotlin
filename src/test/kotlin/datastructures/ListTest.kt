@@ -61,6 +61,13 @@ class ListTest {
     }
 
     @Test
+    fun test_fold_left() {
+        val list = list(1, 2, 3)
+        val sum = list.foldLeft(0, MyModule::sum)
+        assertTrue(sum == 6)
+    }
+
+    @Test
     fun test_fold_right() {
         val list = list(1, 2, 3)
         val sum = list.foldRight(0, MyModule::sum)

@@ -103,16 +103,16 @@ interface IParser<F> {
             map(string(""), { a })
 
     fun <A> many(parser: Kind<F, A>): Kind<F, List<A>> =
-            or(map2(parser, many(parser), { a, list -> list.setHead(a) }), { succeed(empty()) })
+            or(map2(parser, { many(parser) }, { a, list -> list.setHead(a) }), { succeed(empty()) })
 
     fun <A> many1(parser: Kind<F, A>): Kind<F, List<A>> =
-            map2(parser, many(parser), { a, list -> list.setHead(a) })
+            map2(parser, { many(parser) }, { a, list -> list.setHead(a) })
 
     fun <A, B> map(parser: Kind<F, A>, f: (A) -> B): Kind<F, B> =
             flatMap(parser, { a: A -> succeed(f(a)) })
 
-    fun <A, B, C> map2(pa: Kind<F, A>, pb: Kind<F, B>, f: (A, B) -> C): Kind<F, C> =
-            flatMap(pa, { a -> map(pb, { f(a, it) }) })
+    fun <A, B, C> map2(pa: Kind<F, A>, pb: () -> Kind<F, B>, f: (A, B) -> C): Kind<F, C> =
+            flatMap(pa, { a -> map(pb(), { f(a, it) }) })
 
     fun char(c: Char): Kind<F, Char> =
             map(string(c.toString()), { it[0] })
@@ -124,10 +124,10 @@ interface IParser<F> {
             map(slice(parser), { _ -> b })
 
     fun <A, B> skipLeft(left: Kind<F, A>, right: () -> Kind<F, B>): Kind<F, B> =
-            map2(slice(left), right(), { _, b -> b })
+            map2(slice(left), { right() }, { _, b -> b })
 
     fun <A, B> skipRight(left: Kind<F, A>, right: () -> Kind<F, B>): Kind<F, A> =
-            map2(left, slice(right()), { a, _ -> a })
+            map2(left, { slice(right()) }, { a, _ -> a })
 
     fun <A, B, C> surround(start: Kind<F, A>, stop: Kind<F, B>, parser: () -> Kind<F, C>): Kind<F, C> =
             skipLeft(start, { skipRight(parser(), { stop }) })
@@ -164,7 +164,7 @@ interface IParser<F> {
 
     /** One or more repetitions of `parser`, separated by `ignored`, whose results are ignored. */
     fun <A, B> sep1(parser: Kind<F, A>, ignored: Kind<F, B>): Kind<F, List<A>> =
-            map2(parser, many(skipRight(parser, { ignored })), { element, list -> list.setHead(element) })
+            map2(parser, { many(skipRight(parser, { ignored })) }, { element, list -> list.setHead(element) })
 
     /** One or more repetitions of `parser`, separated by `ignored`, whose results are ignored. */
     fun <A, B> sep(parser: Kind<F, A>, ignored: Kind<F, B>): Kind<F, List<A>> =

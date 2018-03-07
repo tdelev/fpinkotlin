@@ -12,55 +12,69 @@ data class JBool(val bool: Boolean) : Json()
 data class JArray(val array: List<Json>) : Json()
 data class JObject(val obj: Map<String, Json>) : Json()
 
-/*class JsonParser(parser: Parser<Json>) : AbstractParser<Json>(parser) {
 
-    fun token(s: String) = parser.string(s)
+class JSON(private val parser: IParser<ForParser>) {
+    fun <A> Kind<ForParser, A>.or(p: () -> Kind<ForParser, A>) = parser.or(this, p)
+    fun <A> Kind<ForParser, A>.scope(msg: String) = parser.scope(msg, this)
+    fun <A, B> Kind<ForParser, A>.to(b: B) = parser.`as`(this, b)
+    fun <A, B> Kind<ForParser, A>.map(f: (A) -> B) = parser.map(this, f)
 
-    val literal: Parser<Json> = parser.string("null").to(JNull as Json)
-            .or({ parser.double().map { JNumber(it) } })
-            .or({ parser.escapedQuoted().map { JString(it) } })
-            .or({ parser.string("true").to(JBool(true)) })
-            .or({ parser.string("false").to(JBool(false)) })
+    fun token(str: String) = parser.token(parser.string(str))
 
-    val keyval: Parser<Pair<String, Json>> =
-            parser.escapedQuoted().product({ parser.string(":").skipLeft { value } })
-
-    val obj: Parser<Json> = parser.string("{").surround(parser.string("}"), {
-        keyval.sep(parser.string(",")).map {
-            it.foldRight(mutableMapOf<String, Json>(), { element, result ->
-                result[element.first] = element.second
-                result
-            })
-        }.map { JObject(it) } as Parser<Json>
+    val literal = token("null").to(JNull).or({
+        parser.double().map({ JNumber(it) })
+    }).or({
+        parser.escapedQuoted().map({ JString(it) })
+    }).or({
+        token("false").to(JBool(false))
+    }).or({
+        token("true").to(JBool(true))
     })
 
-    val array: Parser<Json> = parser.string("[").surround(parser.string("]"), {
-        value.sep(parser.string(",")).map { JArray(it) }
-    }) as Parser<Json>
+    val value: Kind<ForParser, Json> = literal.or { obj }.or { array }
 
-    val value = literal.or({ obj }).or({ array })
+    val keyval = parser.product(parser.escapedQuoted(), { parser.skipLeft(token(":"), { value }) })
 
-}*/
+    val obj = parser.surround(token("{"), token("}"), {
+        parser.sep(keyval, token(",")).map { kvs ->
+            val map = kvs.foldLeft(mutableMapOf<String, Json>(), { element, map ->
+                map[element.first] = element.second
+                map
+            })
+            JObject(map)
+        }.scope("object")
+    })
 
-object JSON {
-    fun getParser(parser: IParser<ForParser>): ParserC<Json> {
-        fun <A> Kind<ForParser, A>.or(p: () -> Kind<ForParser, A>) = parser.or(this, p)
-        fun <A> Kind<ForParser, A>.scope(msg: String) = parser.scope(msg, this)
-        fun <A, B> Kind<ForParser, A>.to(b: B) = parser.`as`(this, b)
-        fun <A, B> Kind<ForParser, A>.map(f: (A) -> B) = parser.map(this, f)
+    val array = parser.surround(token("["), token("]"), {
+        parser.sep(value, token(",")).map {
+            JArray(it)
+        }.scope("array")
+    })
 
-        fun token(str: String) = parser.token(parser.string(str))
-        val literal = token("null").to(JNull).or({
-            parser.double().map({ JNumber(it) })
-        }).or({
-            parser.escapedQuoted().map({ JString(it) })
-        }).or({
-            token("false").to(JBool(false))
-        }).or({
-            token("true").to(JBool(true))
-        })
-
-        return parser.root(literal).fix()
+    fun parse(): ParserC<Json> {
+        return parser.root(parser.skipLeft(parser.whitespace(), { obj.or { array } })).fix()
     }
 
+}
+
+object JSONExample {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        println("Hello")
+        val jsonParser = JSON(Reference)
+
+        val jsonTxt = """
+{
+  "Company name" : "Microsoft Corporation",
+  "Ticker"  : "MSFT",
+  "Active"  : true,
+  "Price"   : 30.66,
+  "Shares outstanding" : 8.38e9,
+  "Related companies" : [ "HPQ", "IBM", "YHOO", "DELL", "GOOG" ]
+}
+"""
+
+        val result = Reference.run(jsonParser.parse(), jsonTxt)
+        println("Result: $result")
+    }
 }

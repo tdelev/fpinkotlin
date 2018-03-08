@@ -110,8 +110,8 @@ class ReferenceTest {
 
     @Test
     fun test_many() {
-        val input = "aaaa "
-        val parser = Reference.many1(string("a"))
+        val input = "aaaab"
+        val parser = Reference.many(string("a"))
         val result = Reference.run(parser, input)
         println(result)
     }

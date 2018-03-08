@@ -16,7 +16,13 @@ data class ParseState(val location: Location) {
     val input: String
         get() = location.input.substring(location.offset)
 
-    fun slice(n: Int) = location.input.substring(location.offset, location.offset + n)
+    fun slice(n: Int): String {
+        println("loc input: ${location.input}")
+        println("loc offset: ${location.offset}")
+        println("n: ${n}")
+        return location.input.substring(location.offset, location.offset + n)
+    }
+
 
     fun advanceBy(numChars: Int): ParseState =
             ParseState(Location(location.input, location.offset + numChars))
@@ -165,7 +171,7 @@ interface IParser<F> {
 
     /** One or more repetitions of `parser`, separated by `ignored`, whose results are ignored. */
     fun <A, B> sep1(parser: Kind<F, A>, ignored: Kind<F, B>): Kind<F, List<A>> =
-            map2(parser, { many(skipRight(parser, { ignored })) }, { element, list -> list.setHead(element) })
+            map2(parser, { many(skipLeft(ignored, { parser })) }, { element, list: List<A> -> list.setHead(element) })
 
     /** One or more repetitions of `parser`, separated by `ignored`, whose results are ignored. */
     fun <A, B> sep(parser: Kind<F, A>, ignored: Kind<F, B>): Kind<F, List<A>> =

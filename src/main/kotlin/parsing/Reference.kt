@@ -106,6 +106,7 @@ object Reference : IParser<ForParser> {
      * first index where the two strings differed. If s2 is
      * longer than s1, returns s1.length. */
     fun firstNonmatchingIndex(s1: String, s2: String, offset: Int): Int {
+        if (offset >= s1.length) return -1
         var i = 0
         while (i < s1.length && i < s2.length) {
             if (s1[i + offset] != s2[i]) return i

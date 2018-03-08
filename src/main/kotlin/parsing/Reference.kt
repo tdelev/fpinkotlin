@@ -8,7 +8,7 @@ class ForParser private constructor()
 data class Parser<out A>(val parser: (ParseState) -> Result<A>) : Kind<ForParser, A>
 
 fun <A> Kind<ForParser, A>.fix() = this as Parser<A>
-fun <A> Kind<ForParser, A>.parser() = (this as Parser<A>).parser
+fun <A> Kind<ForParser, A>.parser() = this.fix().parser
 
 
 object Reference : IParser<ForParser> {
@@ -73,7 +73,10 @@ object Reference : IParser<ForParser> {
         return Parser({ state ->
             val result = parser1.parser()(state)
             when (result) {
-                is Failure -> parser2().parser()(state)
+                is Failure -> {
+                    if (result.isCommitted) result
+                    else parser2().parser()(state)
+                }
                 else -> result
             }
         })

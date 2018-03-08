@@ -72,6 +72,8 @@ sealed class List<out T> {
         is Nil -> None
         is Cons -> Some(this.head)
     }
+
+    fun isEmpty() = this === Nil
 }
 
 object Nil : List<Nothing>()

@@ -78,12 +78,10 @@ class JSON(private val parser: IParser<ForParser>) {
 
 fun Either<ParseError, Json>.print() = this.fold(::println, ::println)
 
-object JSONExample {
-    @JvmStatic
-    fun main(args: Array<String>) {
-        val jsonParser = JSON(Reference)
+fun main(args: Array<String>) {
+    val jsonParser = JSON(Reference)
 
-        val jsonTxt = """
+    val jsonTxt = """
 {
   "Company name" : "Microsoft Corporation",
   "Ticker"  : "MSFT",
@@ -94,7 +92,26 @@ object JSONExample {
 }
 """
 
-        val result = Reference.run(jsonParser.parse(), jsonTxt)
-        result.print()
-    }
+    val result = Reference.run(jsonParser.parse(), jsonTxt)
+    result.print()
+
+    val malformedJson1 = """
+{
+  "Company name" ; "Microsoft Corporation"
+}
+"""
+    val errorResult = Reference.run(jsonParser.parse(), malformedJson1)
+    errorResult.print()
+
+    val malformedJson2 = """
+[
+  [ "HPQ", "IBM",
+  "YHOO", "DELL" ++
+  "GOOG"
+  ]
+]
+"""
+
+    val errorResult2 = Reference.run(jsonParser.parse(), malformedJson2)
+    errorResult2.print()
 }

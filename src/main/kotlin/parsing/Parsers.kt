@@ -1,9 +1,7 @@
 package parsing
 
+import datastructures.*
 import datastructures.List
-import datastructures.empty
-import datastructures.list
-import datastructures.setHead
 import errorhandling.Either
 import errorhandling.Left
 import errorhandling.Right
@@ -58,8 +56,27 @@ data class Failure(val error: ParseError, val isCommitted: Boolean) : Result<Not
 
 data class ParseError(val stack: List<Pair<Location, String>>) {
     fun label(msg: String) =
-            ParseError(list(stack.head().map { Pair(it.first, msg) }.orElse(Pair(Location("", 0), ""))))
+            ParseError(list(
+                    stack.head().map {
+                        Pair(it.first, msg)
+                    }.orElse(Pair(Location("", 0), ""))
+            ))
 
+    private fun collapseErrors() = stack.toKList()
+            .groupBy { it.first }
+            .mapValues { it.value.joinToString(";") { it.second } }
+            .toList()
+            .sortedBy { it.first.offset }
+
+    override fun toString(): String {
+        return if (stack.isEmpty()) "No error messages"
+        else {
+            // val collapsed = collapseErrors()
+            val errors = stack.map { "Error in '${it.second}': ${it.first}" }
+                    .foldLeft(StringBuilder(), { str, builder -> builder.append(str) })
+            return errors.toString()
+        }
+    }
 }
 
 data class Location(val input: String, val offset: Int = 0) {
@@ -73,6 +90,13 @@ data class Location(val input: String, val offset: Int = 0) {
     }
 
     fun toError(msg: String) = ParseError(list(Pair(this, msg)))
+
+    val ANSI_RED = "\u001B[31m"
+    val ANSI_RESET = "\u001B[0m"
+
+    override fun toString(): String {
+        return "\nLine: $line:$col\n${input.substring(0, offset)}$ANSI_RED${input.substring(offset, offset + 1)}$ANSI_RESET\n\n"
+    }
 }
 
 fun errorLocation(e: ParseError): Location = TODO()

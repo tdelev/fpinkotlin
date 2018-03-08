@@ -83,4 +83,11 @@ class ListTest {
             assertTrue(it == 6)
         }
     }
+
+    @Test
+    fun test_toArray() {
+        val list = list(1, 2, 3)
+        val array = list.toArray()
+        assertTrue(array.size == 3)
+    }
 }

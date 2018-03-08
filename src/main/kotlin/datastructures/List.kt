@@ -7,7 +7,7 @@ import errorhandling.Some
 sealed class List<out T> {
 
     override fun toString(): String = when (this) {
-        Nil -> "-|"
+        Nil -> "|"
         is Cons -> "${this.head} -> ${this.tail}"
     }
 
@@ -102,11 +102,24 @@ fun <T> List<T>.setHead(element: T): List<T> = when (this) {
     is Cons -> Cons(element, this)
     is Nil -> Cons(element, Nil)
 }
-/*
-fun <T> List<T>.toArray(): Array<T> {
-    val length = this.length
-    val result = Array<Any>()
-}*/
+
+inline fun <reified T> List<T>.toArray(): Array<T> {
+    val result = mutableListOf<T>()
+    this.foldLeft(result, { element, list ->
+        list.add(element)
+        list
+    })
+    return result.toTypedArray()
+}
+
+inline fun <reified T> List<T>.toKList(): kotlin.collections.List<T> {
+    val result = mutableListOf<T>()
+    this.foldLeft(result, { element, list ->
+        list.add(element)
+        list
+    })
+    return result
+}
 
 fun <T> init(list: List<T>): List<T> =
         when (list) {

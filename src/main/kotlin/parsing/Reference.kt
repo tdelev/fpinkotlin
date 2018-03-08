@@ -5,9 +5,9 @@ import errorhandling.Either
 import higherkind.Kind
 
 class ForParser private constructor()
-data class ParserC<A>(val parser: (ParseState) -> Result<A>) : Kind<ForParser, A>
+data class Parser<out A>(val parser: (ParseState) -> Result<A>) : Kind<ForParser, A>
 
-fun <A> Kind<ForParser, A>.fix() = this as ParserC<A>
+fun <A> Kind<ForParser, A>.fix() = this as Parser<A>
 
 
 object Reference : IParser<ForParser> {
@@ -19,13 +19,13 @@ object Reference : IParser<ForParser> {
     }
 
     override fun <A> succeed(a: A): Kind<ForParser, A> {
-        return ParserC({ _ -> Success(a, 0) })
+        return Parser({ _ -> Success(a, 0) })
     }
 
     override fun string(s: String): Kind<ForParser, String> {
         val msg = "'$s'"
 
-        return ParserC({ state ->
+        return Parser({ state ->
             val i = firstNonmatchingIndex(state.location.input, s, state.location.offset)
             if (i == -1) {
                 Success(s, s.length)
@@ -37,7 +37,7 @@ object Reference : IParser<ForParser> {
 
     override fun regex(r: Regex): Kind<ForParser, String> {
         val msg = "regex $r"
-        return ParserC({ state ->
+        return Parser({ state ->
             val match = r.find(state.input)
             when (match) {
                 null -> Failure(state.location.toError(msg), false)
@@ -47,7 +47,7 @@ object Reference : IParser<ForParser> {
     }
 
     override fun <A, B> flatMap(parser: Kind<ForParser, A>, f: (A) -> Kind<ForParser, B>): Kind<ForParser, B> {
-        return ParserC({ state ->
+        return Parser({ state ->
             val parserInstance = parser.fix().parser
             val parseResult = parserInstance(state)
             when (parseResult) {
@@ -60,7 +60,7 @@ object Reference : IParser<ForParser> {
     }
 
     override fun <A> slice(parser: Kind<ForParser, A>): Kind<ForParser, String> {
-        return ParserC({ state ->
+        return Parser({ state ->
             val parserInstance = parser.fix().parser
             val parseResult = parserInstance(state)
             when (parseResult) {
@@ -71,7 +71,7 @@ object Reference : IParser<ForParser> {
     }
 
     override fun <A> or(parser1: Kind<ForParser, A>, parser2: () -> Kind<ForParser, A>): Kind<ForParser, A> {
-        return ParserC({ state ->
+        return Parser({ state ->
             val parser = parser1.fix().parser
             val parseResult = parser(state)
             when (parseResult) {
@@ -82,21 +82,21 @@ object Reference : IParser<ForParser> {
     }
 
     override fun <A> label(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
-        return ParserC({ state ->
+        return Parser({ state ->
             val parserInstance = parser.fix().parser
             parserInstance(state).mapError { it.label(msg) }
         })
     }
 
     override fun <A> scope(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
-        return ParserC({ state ->
+        return Parser({ state ->
             val parserInstance = parser.fix().parser
             parserInstance(state).mapError { ParseError(it.stack.setHead(Pair(state.location, msg))) }
         })
     }
 
     override fun <A> attempt(parser: Kind<ForParser, A>): Kind<ForParser, A> {
-        return ParserC({ state ->
+        return Parser({ state ->
             val parserInstance = parser.fix().parser
             parserInstance(state).uncommit()
         })

@@ -1,16 +1,33 @@
 package parsing
 
 import datastructures.List
+import errorhandling.Either
 import higherkind.Kind
 
 sealed class Json
 
 object JNull : Json()
-data class JNumber(val number: Double) : Json()
-data class JString(val str: String) : Json()
-data class JBool(val bool: Boolean) : Json()
-data class JArray(val array: List<Json>) : Json()
-data class JObject(val obj: Map<String, Json>) : Json()
+data class JNumber(val value: Double) : Json() {
+    override fun toString() = value.toString()
+}
+
+data class JString(val value: String) : Json() {
+    override fun toString() = value
+}
+
+data class JBool(val value: Boolean) : Json() {
+    override fun toString() = value.toString()
+}
+
+data class JArray(val array: List<Json>) : Json() {
+    override fun toString() = array.toString()
+}
+
+data class JObject(val value: Map<String, Json>) : Json() {
+    override fun toString(): String {
+        return value.map { "${it.key} : ${it.value}" }.joinToString("\n")
+    }
+}
 
 
 class JSON(private val parser: IParser<ForParser>) {
@@ -53,11 +70,13 @@ class JSON(private val parser: IParser<ForParser>) {
         }.scope("array")
     })
 
-    fun parse(): ParserC<Json> {
+    fun parse(): Parser<Json> {
         return parser.root(parser.skipLeft(parser.whitespace(), { obj.or { array } })).fix()
     }
 
 }
+
+fun Either<ParseError, Json>.print() = this.fold(::println, ::println)
 
 object JSONExample {
     @JvmStatic
@@ -76,7 +95,6 @@ object JSONExample {
 """
 
         val result = Reference.run(jsonParser.parse(), jsonTxt)
-        println("Result: $result")
-
+        result.print()
     }
 }

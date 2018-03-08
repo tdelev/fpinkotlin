@@ -1,10 +1,11 @@
 package errorhandling
 
 import datastructures.Cons
+import datastructures.List
 import datastructures.Nil
 
-sealed class Either<out E, out T> {
-    fun <R> map(f: (T) -> R): Either<E, R> =
+sealed class Either<out E, out A> {
+    fun <R> map(f: (A) -> R): Either<E, R> =
             flatMap { Right(f(it)) }
 
     override fun toString(): String =
@@ -12,30 +13,30 @@ sealed class Either<out E, out T> {
                 is Left -> "Left($value)"
                 is Right -> "Right($value)"
             }
+
+    fun fold(left: (E) -> Unit, right: (A) -> Unit) =
+            when (this) {
+                is Left -> left(value)
+                is Right -> right(value)
+            }
 }
 
-fun <E, T, R> Either<E, T>.flatMap(f: (T) -> Either<E, R>): Either<E, R> =
+fun <E, A, B> Either<E, A>.flatMap(f: (A) -> Either<E, B>): Either<E, B> =
         when (this) {
             is Left -> Left(value)
             is Right -> f(value)
         }
 
-fun <E, R> Either<E, R>.orElse(get: () -> R): Either<E, R> =
+fun <E, B> Either<E, B>.orElse(get: () -> B): Either<E, B> =
         when (this) {
             is Left -> Right(get())
             is Right -> this
         }
 
-fun <E, T1, T2, R> Either<E, T1>.map2(second: Either<E, T2>, f: (T1, T2) -> R): Either<E, R> =
-        when (this) {
-            is Left -> this
-            is Right -> when (second) {
-                is Left -> second
-                is Right -> Right(f(this.value, second.value))
-            }
-        }
+fun <E, A, B, C> Either<E, A>.map2(second: Either<E, B>, f: (A, B) -> C): Either<E, C> =
+        this.flatMap { a -> second.map { b -> f(a, b) } }
 
-fun <E, T, R> traverse(list: datastructures.List<T>, f: (T) -> Either<E, R>): Either<E, datastructures.List<R>> =
+fun <E, T, R> traverse(list: List<T>, f: (T) -> Either<E, R>): Either<E, List<R>> =
         when (list) {
             Nil -> Right(Nil)
             is Cons -> f(list.head).map2(traverse(list.tail, f), { first, second ->
@@ -43,7 +44,7 @@ fun <E, T, R> traverse(list: datastructures.List<T>, f: (T) -> Either<E, R>): Ei
             })
         }
 
-fun <E, T> sequence(list: datastructures.List<Either<E, T>>): Either<E, datastructures.List<T>> =
+fun <E, T> sequence(list: List<Either<E, T>>): Either<E, List<T>> =
         traverse(list, { it })
 
 class Left<out E>(val value: E) : Either<E, Nothing>()

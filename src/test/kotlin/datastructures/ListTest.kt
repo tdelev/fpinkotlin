@@ -50,7 +50,7 @@ class ListTest {
     @Test
     fun test_toString() {
         val list = list(1, 2)
-        assertEquals(list.toString(), "1 -> 2 -> -|")
+        assertEquals(list.toString(), "1 -> 2 -> |")
     }
 
     @Test

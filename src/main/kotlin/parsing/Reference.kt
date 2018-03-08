@@ -8,13 +8,14 @@ class ForParser private constructor()
 data class Parser<out A>(val parser: (ParseState) -> Result<A>) : Kind<ForParser, A>
 
 fun <A> Kind<ForParser, A>.fix() = this as Parser<A>
+fun <A> Kind<ForParser, A>.parser() = (this as Parser<A>).parser
 
 
 object Reference : IParser<ForParser> {
 
     override fun <A> run(parser: Kind<ForParser, A>, input: String): Either<ParseError, A> {
         val startState = ParseState(Location(input, 0))
-        val parserInstance = parser.fix().parser
+        val parserInstance = parser.parser()
         return parserInstance(startState).extract()
     }
 
@@ -48,57 +49,53 @@ object Reference : IParser<ForParser> {
 
     override fun <A, B> flatMap(parser: Kind<ForParser, A>, f: (A) -> Kind<ForParser, B>): Kind<ForParser, B> {
         return Parser({ state ->
-            val parserInstance = parser.fix().parser
-            val parseResult = parserInstance(state)
-            when (parseResult) {
-                is Success -> f(parseResult.result).fix().parser(state.advanceBy(parseResult.length))
-                        .addCommit(parseResult.length != 0)
-                        .advanceSuccess(parseResult.length)
-                is Failure -> parseResult
+            val result = parser.parser()(state)
+            when (result) {
+                is Success -> f(result.result).parser()(state.advanceBy(result.length))
+                        .addCommit(result.length != 0)
+                        .advanceSuccess(result.length)
+                is Failure -> result
             }
         })
     }
 
     override fun <A> slice(parser: Kind<ForParser, A>): Kind<ForParser, String> {
         return Parser({ state ->
-            val parserInstance = parser.fix().parser
-            val parseResult = parserInstance(state)
-            when (parseResult) {
-                is Success -> Success(state.slice(parseResult.length), parseResult.length)
-                is Failure -> parseResult
+            val result = parser.parser()(state)
+            when (result) {
+                is Success -> Success(state.slice(result.length), result.length)
+                is Failure -> result
             }
         })
     }
 
     override fun <A> or(parser1: Kind<ForParser, A>, parser2: () -> Kind<ForParser, A>): Kind<ForParser, A> {
         return Parser({ state ->
-            val parser = parser1.fix().parser
-            val parseResult = parser(state)
-            when (parseResult) {
-                is Failure -> parser2().fix().parser(state)
-                else -> parseResult
+            val result = parser1.parser()(state)
+            when (result) {
+                is Failure -> parser2().parser()(state)
+                else -> result
             }
         })
     }
 
     override fun <A> label(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
         return Parser({ state ->
-            val parserInstance = parser.fix().parser
-            parserInstance(state).mapError { it.label(msg) }
+            val result = parser.parser()(state)
+            result.mapError { it.label(msg) }
         })
     }
 
     override fun <A> scope(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
         return Parser({ state ->
-            val parserInstance = parser.fix().parser
-            parserInstance(state).mapError { ParseError(it.stack.setHead(Pair(state.location, msg))) }
+            val result = parser.parser()(state)
+            result.mapError { ParseError(it.stack.setHead(Pair(state.location, msg))) }
         })
     }
 
     override fun <A> attempt(parser: Kind<ForParser, A>): Kind<ForParser, A> {
         return Parser({ state ->
-            val parserInstance = parser.fix().parser
-            parserInstance(state).uncommit()
+            parser.parser()(state).uncommit()
         })
     }
 

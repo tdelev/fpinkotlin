@@ -65,8 +65,28 @@ class JSONTest {
         val result = Reference.run(json.array, "[1, 2, 3]")
         result.map {
             assertTrue(it is JArray)
+            println(it)
         }
-        println(result)
+    }
+
+    @Test
+    fun test_value_array() {
+        val json = JSON(Reference)
+        val result = Reference.run(json.value, "[1, 2, 3]")
+        result.map {
+            assertTrue(it is JArray)
+            println(it)
+        }
+    }
+
+    @Test
+    fun test_value_object() {
+        val json = JSON(Reference)
+        val result = Reference.run(json.value, "{ \"a\" : 55 }")
+        result.map {
+            assertTrue(it is JObject)
+            println(it)
+        }
     }
 
 }

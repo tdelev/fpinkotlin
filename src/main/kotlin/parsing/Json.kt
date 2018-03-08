@@ -22,14 +22,16 @@ class JSON(private val parser: IParser<ForParser>) {
     fun token(str: String) = parser.token(parser.string(str))
 
     val literal = token("null").to(JNull).or({
-        parser.double().map({ JNumber(it) })
+        parser.double().map({
+            JNumber(it)
+        })
     }).or({
         parser.escapedQuoted().map({ JString(it) })
     }).or({
         token("false").to(JBool(false))
     }).or({
         token("true").to(JBool(true))
-    })
+    }).scope("literal")
 
     val value: Kind<ForParser, Json> = literal.or { obj }.or { array }
 
@@ -47,7 +49,6 @@ class JSON(private val parser: IParser<ForParser>) {
 
     val array = parser.surround(token("["), token("]"), {
         parser.sep(value, token(",")).map {
-            println("IT: $it")
             JArray(it)
         }.scope("array")
     })

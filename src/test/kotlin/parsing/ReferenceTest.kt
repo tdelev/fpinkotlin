@@ -1,6 +1,7 @@
 package parsing
 
 import errorhandling.Left
+import errorhandling.Right
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 import org.junit.Test
@@ -84,18 +85,18 @@ class ReferenceTest {
 
     @Test
     fun test_flatMap() {
-        val input = "abcd"
+        val input = "ababX"
         val parser = Reference.flatMap(string("ab"), {
-            string("cd")
+            string("${it}X")
         })
         val result = Reference.run(parser, input)
-        result.map { assertEquals("cd", it) }
+        result.map { assertEquals("abX", it) }
     }
 
     @Test
     fun test_map2() {
         val input = "abcd"
-        val parser = Reference.map2(string("ab"), { string("cd") }, { a, b -> "$a-$b"})
+        val parser = Reference.map2(string("ab"), { string("cd") }, { a, b -> "$a-$b" })
         val result = Reference.run(parser, input)
         result.map { assertEquals("ab-cd", it) }
     }
@@ -113,15 +114,35 @@ class ReferenceTest {
         val input = "aaaab"
         val parser = Reference.many(string("a"))
         val result = Reference.run(parser, input)
-        println(result)
+        result.map { assertTrue(it.length() == 4) }
+    }
+
+    @Test
+    fun test_many_empty() {
+        val input = "b"
+        val parser = Reference.many(string("a"))
+        val result = Reference.run(parser, input)
+        assertTrue(result is Right)
     }
 
     @Test
     fun test_separate() {
-        val input = "a,a,a,a"
+        val input = "a,a,a,a "
         val parser = Reference.sep(string("a"), string(","))
         val result = Reference.run(parser, input)
-        println(result)
-        result.map { assertEquals(Pair("ab", "cd"), it) }
+        result.map {
+            assertTrue(it.length() == 4)
+            println(it)
+        }
+    }
+
+    @Test
+    fun test_double() {
+        val input = "12.3"
+        val parser = Reference.double()
+        val result = Reference.run(parser, input)
+        result.map {
+            assertTrue(it == 12.3)
+        }
     }
 }

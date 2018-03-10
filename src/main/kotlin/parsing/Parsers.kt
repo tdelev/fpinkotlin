@@ -2,10 +2,7 @@ package parsing
 
 import datastructures.*
 import datastructures.List
-import errorhandling.Either
-import errorhandling.Left
-import errorhandling.Right
-import errorhandling.orElse
+import errorhandling.*
 import higherkind.Kind
 import java.util.regex.Pattern
 
@@ -59,7 +56,7 @@ data class ParseError(val stack: List<Pair<Location, String>>) {
             ParseError(list(
                     stack.head().map {
                         Pair(it.first, msg)
-                    }.orElse(Pair(Location("", 0), ""))
+                    }.getOrElse({ Pair(Location("", 0), "") })
             ))
 
     private fun collapseErrors() = stack.toKList()

@@ -3,10 +3,12 @@ package state
 import datastructures.Cons
 import datastructures.List
 import datastructures.Nil
+import state.Random.char
 import state.Random.double
 import state.Random.ints
 import state.Random.nonNegativeEven
 import state.Random.rollDie
+import state.Random.string
 
 
 typealias StateType<S, T> = (S) -> Pair<T, S>
@@ -21,6 +23,11 @@ object Random {
     val int: Rand<Int> = { it.nextInt() }
 
     val boolean: Rand<Boolean> = map(int, { it % 2 == 0 })
+
+    val char: Rand<Char> = map2(nonNegativeIntLessThen(26), boolean, { i, upper ->
+        if (upper) ('A' + i)
+        else ('a' + i)
+    })
 
     fun <T> unit(a: T): Rand<T> = { Pair(a, it) }
 
@@ -71,8 +78,6 @@ object Random {
 
     fun nonNegativeEven(): Rand<Int> =
             map(::nonNegativeInt, { it - it % 2 })
-
-    //fun boolean(): Rand<Boolean> =
 
     class SimpleRNG(val seed: Long) : RNG {
         override fun nextInt(): Pair<Int, RNG> {
@@ -130,6 +135,15 @@ object Random {
         }
     }
 
+    fun string(count: Int, rng: RNG): Pair<String, RNG> {
+        return if (count == 0) Pair("", rng)
+        else {
+            val nextChar = char(rng)
+            val next = string(count - 1, nextChar.second)
+            Pair(nextChar.first.toString() + next.first, next.second)
+        }
+    }
+
     fun rollDie(): Rand<Int> = map(nonNegativeIntLessThen(6), { it + 1 })
 
 }
@@ -142,4 +156,6 @@ fun main(args: Array<String>) {
     println(nonNegativeEven()(rnd))
     println(double(rnd))
     println(rollDie()(rnd))
+    println(char(rnd))
+    println(string(10, rnd))
 }

@@ -37,10 +37,10 @@ fun <T> Option<T>.getOrElse(get: () -> T): T =
             is Some -> this.value
         }
 
-fun <T> Option<T>.orElse(other: T): T =
+fun <T> Option<T>.orElse(other: Option<T>): Option<T> =
         when (this) {
             None -> other
-            is Some -> this.value
+            is Some -> this
         }
 
 fun <T> unit(a: T) = Some(a)

@@ -1,9 +1,8 @@
 package testing
 
-import datastructures.List
-import datastructures.fill
 import datastructures.reduce
 import errorhandling.Some
+import errorhandling.getOrElse
 import errorhandling.orElse
 import laziness.Stream
 import laziness.from
@@ -13,10 +12,7 @@ import parallelism.Par
 import parallelism.ParType
 import state.RNG
 import state.Random
-import state.State
-import state.StateI
 import java.util.concurrent.Executors
-import kotlin.math.absoluteValue
 import kotlin.math.min
 
 typealias FailedCase = String
@@ -38,7 +34,7 @@ fun <A> forAll(gen: Gen<A>, predicate: (A) -> Boolean): Prop = Prop { max, n, rn
                     Failed(buildMessage(element, e), index)
                 }
             }.find({ it.isFalsified })
-            .orElse(Passed)
+            .getOrElse { Passed }
 }
 
 fun <A> randomStream(gen: Gen<A>, rng: RNG): Stream<A> =
@@ -64,11 +60,11 @@ fun <A> forAll(gen: (Int) -> Gen<A>, predicate: (A) -> Boolean): Prop = Prop { m
         }
     }.toList().reduce({ a, b ->
         b.and(a)
-    }).orElse(Prop { _, _, _ -> Passed })
+    }).getOrElse {  Prop { _, _, _ -> Passed }}
     prop.run(max, n, rng)
 }
 
-fun <A> forAll(sgen: SGen<A>, predicate: (A) -> Boolean): Prop =
+fun <A> forAll(sgen: SizedGen<A>, predicate: (A) -> Boolean): Prop =
         forAll(sgen.forSize, predicate)
 
 fun <A> forAllPar(gen: Gen<A>, f: (A) -> ParType<Boolean>): Prop =
@@ -80,21 +76,6 @@ fun check(predicate: () -> Boolean): Prop = Prop { _, _, _ ->
 
 fun checkPar(par: ParType<Boolean>): Prop =
         forAllPar(Generator.unit(1), { par })
-
-class Prop(val run: (MaxSize, TestCases, RNG) -> Result) {
-
-    fun and(prop: Prop): Prop = Prop { max, n, rng ->
-        val result = run(max, n, rng)
-        if (result == Passed) prop.run(max, n, rng)
-        else result
-    }
-
-    fun or(prop: Prop): Prop = Prop { max, n, rng ->
-        val result = run(max, n, rng)
-        if (result == Passed) result
-        else prop.run(max, n, rng)
-    }
-}
 
 sealed class Result {
     abstract val isFalsified: Boolean
@@ -110,73 +91,6 @@ object Proved : Result() {
 
 class Failed(val failure: FailedCase, val successes: SuccessCount) : Result() {
     override val isFalsified = true
-}
-
-class Gen<A>(val sample: State<RNG, A>) {
-
-    fun <B> map(f: (A) -> B): Gen<B> =
-            Gen(sample.map(f))
-
-    fun <B, C> map2(gen: Gen<B>, f: (A, B) -> C): Gen<C> =
-            Gen(sample.map2(gen.sample, f))
-
-    fun <B> flatMap(f: (A) -> Gen<B>): Gen<B> {
-        return Gen(sample.flatMap { f(it).sample })
-    }
-
-    fun <B> combine(gen: Gen<B>): Gen<Pair<A, B>> =
-            Gen(this.sample.map2(gen.sample, { a, b -> Pair(a, b) }))
-
-    fun listOfN(n: Int): Gen<List<A>> =
-            Gen(StateI.sequence(fill(n, sample)))
-
-    fun unsized(): SGen<A> = SGen({ this })
-
-    fun listOf(): SGen<List<A>> = Generator.listOf(this)
-
-    fun listOf1(): SGen<List<A>> = Generator.listOf1(this)
-
-}
-
-class SGen<A>(val forSize: (Int) -> Gen<A>) {
-    fun <B> map(f: (A) -> B): SGen<B> =
-            SGen({ forSize(it).map(f) })
-
-    fun <B> flatMap(f: (A) -> Gen<B>): SGen<B> {
-        return SGen({ forSize(it).flatMap(f) })
-    }
-
-    fun listOfN(n: Int): SGen<List<A>> =
-            SGen({ forSize(it).listOfN(n) })
-}
-
-object Generator {
-    fun <A> unit(a: A): Gen<A> =
-            Gen(StateI.unit(a))
-
-    fun choose(start: Int, stopExclusive: Int): Gen<Int> =
-            Gen(State(Random::nonNegativeInt).map { start + it % (stopExclusive - start) })
-
-    fun boolean(): Gen<Boolean> =
-            Gen(State(Random.boolean))
-
-    fun <A> union(g1: Gen<A>, g2: Gen<A>): Gen<A> =
-            boolean().flatMap { if (it) g1 else g2 }
-
-    fun <A> weighted(g1: Pair<Gen<A>, Double>, g2: Pair<Gen<A>, Double>): Gen<A> {
-        val threshold = g1.second.absoluteValue / (g1.second.absoluteValue + g2.second.absoluteValue)
-        return Gen(State(Random.double)).flatMap { if (it < threshold) g1.first else g2.first }
-    }
-
-    val S = weighted(Pair(choose(1, 4).map({ Executors.newFixedThreadPool(it) }), .75),
-            Pair(unit(Executors.newCachedThreadPool()), .25))
-
-    fun <A> listOf(gen: Gen<A>): SGen<List<A>> =
-            SGen({ n -> gen.listOfN(n) })
-
-    fun <A> listOf1(gen: Gen<A>): SGen<List<A>> =
-            SGen({ n -> gen.listOfN(Math.max(n, 1)) })
-
 }
 
 val ANSI_GREEN = "\u001B[32m"
@@ -198,7 +112,6 @@ fun run(prop: Prop, maxSize: Int = 100, testCases: Int = 100,
 
 fun <A> equal(pa: ParType<A>, pb: ParType<A>): ParType<Boolean> =
         Par.map2(pa, pb, { a, b -> a == b })
-
 
 fun main(args: Array<String>) {
     val generator = Random.SimpleRNG(System.currentTimeMillis())

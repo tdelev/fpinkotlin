@@ -4,7 +4,7 @@ import parallelism.Par.fork
 import parallelism.Par.map2
 import java.util.concurrent.Executors
 
-fun sum(ints: List<Int>): ParType<Int> =
+fun sum(ints: List<Int>): Par<Int> =
         if (ints.size <= 1) Par.unit(ints[0])
         else {
             val left = ints.subList(0, ints.size / 2)

@@ -61,3 +61,21 @@ fun <А> concatenate(list: List<А>, monoid: Monoid<А>): А =
 
 fun <A, B> foldMap(list: List<A>, monoid: Monoid<B>, f: (A) -> B): B =
         list.foldLeft(monoid.zero(), { a, b -> monoid.op(f(a), b) })
+
+fun <A, B> foldMapV(arrayList: kotlin.collections.List<A>, monoid: Monoid<B>, f: (A) -> B): B {
+    return when {
+        arrayList.isEmpty() -> monoid.zero()
+        arrayList.size == 1 -> f(arrayList[0])
+        else -> {
+            val mid = arrayList.size / 2
+            val left = arrayList.subList(0, mid)
+            val right = arrayList.subList(mid, arrayList.size)
+            monoid.op(foldMapV(left, monoid, f), foldMapV(right, monoid, f))
+        }
+    }
+}
+
+fun main(args: Array<String>) {
+    val sum = foldMapV(listOf(1, 5, 12, 10, 30), intAddition, { it })
+    println(sum)
+}

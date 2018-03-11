@@ -3,13 +3,11 @@ package testing
 import datastructures.reduce
 import errorhandling.Some
 import errorhandling.getOrElse
-import errorhandling.orElse
 import laziness.Stream
 import laziness.from
 import laziness.unfold
 import laziness.zipWith
 import parallelism.Par
-import parallelism.ParType
 import state.RNG
 import state.Random
 import java.util.concurrent.Executors
@@ -67,14 +65,14 @@ fun <A> forAll(gen: (Int) -> Gen<A>, predicate: (A) -> Boolean): Prop = Prop { m
 fun <A> forAll(sgen: SizedGen<A>, predicate: (A) -> Boolean): Prop =
         forAll(sgen.forSize, predicate)
 
-fun <A> forAllPar(gen: Gen<A>, f: (A) -> ParType<Boolean>): Prop =
+fun <A> forAllPar(gen: Gen<A>, f: (A) -> Par<Boolean>): Prop =
         forAll(Generator.S.combine(gen), { f(it.second)(it.first).get() })
 
 fun check(predicate: () -> Boolean): Prop = Prop { _, _, _ ->
     if (predicate()) Proved else Failed("", 0)
 }
 
-fun checkPar(par: ParType<Boolean>): Prop =
+fun checkPar(par: Par<Boolean>): Prop =
         forAllPar(Generator.unit(1), { par })
 
 sealed class Result {
@@ -110,7 +108,7 @@ fun run(prop: Prop, maxSize: Int = 100, testCases: Int = 100,
     }
 }
 
-fun <A> equal(pa: ParType<A>, pb: ParType<A>): ParType<Boolean> =
+fun <A> equal(pa: Par<A>, pb: Par<A>): Par<Boolean> =
         Par.map2(pa, pb, { a, b -> a == b })
 
 fun main(args: Array<String>) {

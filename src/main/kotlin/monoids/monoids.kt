@@ -5,6 +5,9 @@ import errorhandling.None
 import errorhandling.Option
 import errorhandling.orElse
 import gettingstarted.MyModule.compose
+import parallelism.Nonblocking
+import parallelism.NonblockingPar
+import parallelism.flatMap
 
 val stringMonoid = object : Monoid<String> {
     override fun op(a: String, b: String) = "$a$b"
@@ -74,6 +77,18 @@ fun <A, B> foldMapV(arrayList: kotlin.collections.List<A>, monoid: Monoid<B>, f:
         }
     }
 }
+
+fun <A> par(monoid: Monoid<A>) = object : Monoid<NonblockingPar<A>> {
+    override fun op(a: NonblockingPar<A>, b: NonblockingPar<A>): NonblockingPar<A> =
+            Nonblocking.map2(a, b, monoid::op)
+
+    override fun zero() = Nonblocking.unit(monoid.zero())
+}
+
+fun <A, B> parFoldMap(list: kotlin.collections.List<A>, monoid: Monoid<B>, f: (A) -> B): NonblockingPar<B> =
+        Nonblocking.parMap(list, f).flatMap { resultList ->
+            foldMapV(resultList, par(monoid), { Nonblocking.lazyUnit { it } })
+        }
 
 fun main(args: Array<String>) {
     val sum = foldMapV(listOf(1, 5, 12, 10, 30), intAddition, { it })

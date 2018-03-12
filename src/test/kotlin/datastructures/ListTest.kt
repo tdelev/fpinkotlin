@@ -75,6 +75,13 @@ class ListTest {
     }
 
     @Test
+    fun test_flat_map() {
+        val list = list(1, 2, 3)
+        val sum = list.flatMap { list(it * 1, it * 2, it * 3) }
+        assertTrue(sum.length() == 9)
+    }
+
+    @Test
     fun test_reduce() {
         val list = list(1, 2, 3)
         val sum = list.reduce(MyModule::sum)

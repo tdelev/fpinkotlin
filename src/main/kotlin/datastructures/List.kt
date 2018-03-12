@@ -19,6 +19,12 @@ sealed class List<out T> {
     fun <R> map(f: (T) -> R): List<R> =
             foldRight<List<R>>(Nil, { element, result -> Cons(f(element), result) })
 
+    fun <R> flatMap(f: (T) -> List<R>): List<R> =
+            foldRight<List<R>>(Nil, { element, result ->
+                val inner = f(element)
+                inner.foldRight(result, { e, l -> Cons(e, l) })
+            })
+
     fun <R> foldRight(identity: R, f: (T, R) -> R): R = when (this) {
         Nil -> identity
         is Cons -> f(this.head, this.tail.foldRight(identity, f))

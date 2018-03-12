@@ -1,10 +1,10 @@
 package monads
 
 import datastructures.Nil
+import datastructures.list
 import errorhandling.Option
 import errorhandling.Some
 import higherkind.Kind
-import higherkind.Kind2
 import laziness.Empty
 import laziness.Stream
 import monoids.ForList
@@ -14,7 +14,6 @@ import parallelism.Nonblocking
 import parallelism.NonblockingPar
 import parsing.ForParser
 import parsing.Reference
-import state.State
 import testing.Gen
 import testing.Generator
 
@@ -78,4 +77,21 @@ val listMonad = object : Monad<ForList> {
 
     override fun <A, B> flatMap(a: Kind<ForList, A>, f: (A) -> Kind<ForList, B>): Kind<ForList, B> =
             ListK(a.fix().list.flatMap { f(it).fix().list })
+}
+
+class ForId private constructor()
+data class Id<out A>(val a: A) : Kind<ForId, A>
+
+fun <A> Kind<ForId, A>.fix() = this as Id<A>
+
+val idMonad = object : Monad<ForId> {
+    override fun <A> unit(a: A) = Id(a)
+
+    override fun <A, B> flatMap(a: Kind<ForId, A>, f: (A) -> Kind<ForId, B>): Kind<ForId, B> =
+            f(a.fix().a)
+}
+
+fun main(args: Array<String>) {
+    val replicated = listMonad.replicateM(10, ListK(list(1, 2)))
+    println(replicated)
 }

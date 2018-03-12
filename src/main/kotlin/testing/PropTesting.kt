@@ -8,6 +8,9 @@ import laziness.from
 import laziness.unfold
 import laziness.zipWith
 import parallelism.Par
+import parallelism.map
+import parallelism.map2
+import parallelism.unit
 import state.RNG
 import state.Random
 import java.util.concurrent.Executors
@@ -58,7 +61,7 @@ fun <A> forAll(gen: (Int) -> Gen<A>, predicate: (A) -> Boolean): Prop = Prop { m
         }
     }.toList().reduce({ a, b ->
         b.and(a)
-    }).getOrElse {  Prop { _, _, _ -> Passed }}
+    }).getOrElse { Prop { _, _, _ -> Passed } }
     prop.run(max, n, rng)
 }
 
@@ -109,7 +112,7 @@ fun run(prop: Prop, maxSize: Int = 100, testCases: Int = 100,
 }
 
 fun <A> equal(pa: Par<A>, pb: Par<A>): Par<Boolean> =
-        Par.map2(pa, pb, { a, b -> a == b })
+        map2(pa, pb, { a, b -> a == b })
 
 fun main(args: Array<String>) {
     val generator = Random.SimpleRNG(System.currentTimeMillis())
@@ -127,20 +130,20 @@ fun main(args: Array<String>) {
     println(rndS.take(10).find({ it.first > 9 }))*/
     val ES = Executors.newCachedThreadPool()
     val p1 = check({
-        Par.map(Par.unit(1), { it + 1 })(ES).get() == Par.unit(2)(ES).get()
+        map(unit(1), { it + 1 })(ES).get() == unit(2)(ES).get()
     })
     run(p1)
 
     val p2 = checkPar {
         equal(
-                Par.map(Par.unit(1), { it + 1 }),
-                Par.unit(2)
+                map(unit(1), { it + 1 }),
+                unit(2)
         )(it)
     }
 
-    val pint = Generator.choose(0, 10).map({ Par.unit(1) })
+    val pint = Generator.choose(0, 10).map({ unit(1) })
     val p4 = forAllPar(pint, {
-        equal(Par.map(it, { it }), it)
+        equal(map(it, { it }), it)
     })
     run(p4)
 }

@@ -3,6 +3,12 @@ package gettingstarted
 fun <A, B, C> ((A, B) -> C).curry(): (A) -> ((B) -> C) =
         { a: A -> { b: B -> this(a, b) } }
 
+fun <A, B, C, D> ((A, B, C) -> D).curry(): (A) -> ((B) -> (C) -> D) =
+        { a: A -> { b -> { c -> this(a, b, c) } } }
+
+fun <A, B, C, D, E> ((A, B, C, D) -> E).curry(): (A) -> ((B) -> ((C) -> (D) -> E)) =
+        { a: A -> { b -> { c -> { d -> this(a, b, c, d) } } } }
+
 
 object MyModule {
 
@@ -89,14 +95,14 @@ fun main(args: Array<String>) {
     // println(MyModule.isSorted(arrayOf(5, 3, 3), { a, b -> a >= b }))
     //println(MyModule.partial1(5, { x: Int, y: Int -> x + y })(10))
     //println(MyModule.isSortedAsc()(arrayOf(1, 2, 3)))
-   /* println(MyModule.sumX(10)(12))
-    println(MyModule.sumTwo(1, 2))
-    println(MyModule.curry({ x: Int, y: Int -> x * y })(5)(12))
-    println(MyModule.uncurry(MyModule.curry({ x: Int, y: Int -> x * y }))(5, 12))
-    println(MyModule.compose(MyModule.sumX(10), MyModule.curry(MyModule::mul)(5))(6))
-    println(MyModule.intToDouble(12))
-    println(MyModule::toStr.also() { MyModule::toDouble }(12))
-    println({ a: Int, b: Int -> a + b }.curry()(1)(12))*/
+    /* println(MyModule.sumX(10)(12))
+     println(MyModule.sumTwo(1, 2))
+     println(MyModule.curry({ x: Int, y: Int -> x * y })(5)(12))
+     println(MyModule.uncurry(MyModule.curry({ x: Int, y: Int -> x * y }))(5, 12))
+     println(MyModule.compose(MyModule.sumX(10), MyModule.curry(MyModule::mul)(5))(6))
+     println(MyModule.intToDouble(12))
+     println(MyModule::toStr.also() { MyModule::toDouble }(12))
+     println({ a: Int, b: Int -> a + b }.curry()(1)(12))*/
     val sum5 = MyModule.partial1(5, MyModule::sum)
     val sumOne = MyModule.curry(MyModule::sum)
     val sum20 = MyModule::sum.curry()

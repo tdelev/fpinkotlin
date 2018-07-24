@@ -9,7 +9,7 @@ fun sum(ints: List<Int>): Par<Int> =
             val right = ints.subList(ints.size / 2, ints.size)
             println(left)
             println(right)
-            map2(fork({ sum(left) }), fork({ sum(right) }), { a, b -> a + b })
+            map2(fork { sum(left) }, fork { sum(right) }) { a, b -> a + b }
         }
 
 fun main(args: Array<String>) {

@@ -14,5 +14,6 @@ fun makeAge(age: Int): Either<String, Age> =
         else Right(Age(age))
 
 fun makePerson(name: String, age: Int): Either<String, Person> =
-        makeName(name).map2(makeAge(age), { name: Name, age: Age -> Person(name, age) })
+        makeName(name).map2(makeAge(age)) { name: Name, age: Age -> Person(name, age) }
+        /*makeName(name).flatMap { n -> makeAge(age).map { Person(n, it) } }*/
 

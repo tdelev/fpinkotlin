@@ -38,7 +38,7 @@ val parMonad = object : Monad<ForPar> {
     override fun <A> unit(a: A) = ParK(Nonblocking.unit(a))
 
     override fun <A, B> flatMap(a: Kind<ForPar, A>, f: (A) -> Kind<ForPar, B>): Kind<ForPar, B> =
-            ParK(Nonblocking.flatMap(a.fix().par, { f(it).fix().par }))
+            ParK(Nonblocking.flatMap(a.fix().par) { f(it).fix().par })
 }
 
 val parserMonad = object : Monad<ForParser> {

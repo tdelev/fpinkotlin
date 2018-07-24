@@ -20,35 +20,36 @@ object Reference : IParser<ForParser> {
     }
 
     override fun <A> succeed(a: A): Kind<ForParser, A> {
-        return Parser({ _ -> Success(a, 0) })
+        return Parser { _ -> Success(a, 0) }
     }
 
     override fun string(s: String): Kind<ForParser, String> {
-        val msg = "'$s'"
-
-        return Parser({ state ->
+        return Parser { state ->
             val i = firstNonmatchingIndex(state.location.input, s, state.location.offset)
             if (i == -1) {
                 Success(s, s.length)
             } else {
-                Failure(state.location.toError(msg), i != 0)
+                val errorMessage = "'$s'"
+                Failure(state.location.toError(errorMessage), i != 0)
             }
-        })
+        }
     }
 
     override fun regex(r: Regex): Kind<ForParser, String> {
-        val msg = "regex $r"
-        return Parser({ state ->
+        return Parser { state ->
             val match = r.find(state.input)
             when (match) {
-                null -> Failure(state.location.toError(msg), false)
+                null -> {
+                    val errorMessage = "regex $r"
+                    Failure(state.location.toError(errorMessage), false)
+                }
                 else -> Success(match.value, match.value.length)
             }
-        })
+        }
     }
 
     override fun <A, B> flatMap(parser: Kind<ForParser, A>, f: (A) -> Kind<ForParser, B>): Kind<ForParser, B> {
-        return Parser({ state ->
+        return Parser { state ->
             val result = parser.parser()(state)
             when (result) {
                 is Success -> f(result.result).parser()(state.advanceBy(result.length))
@@ -56,21 +57,21 @@ object Reference : IParser<ForParser> {
                         .advanceSuccess(result.length)
                 is Failure -> result
             }
-        })
+        }
     }
 
     override fun <A> slice(parser: Kind<ForParser, A>): Kind<ForParser, String> {
-        return Parser({ state ->
+        return Parser { state ->
             val result = parser.parser()(state)
             when (result) {
                 is Success -> Success(state.slice(result.length), result.length)
                 is Failure -> result
             }
-        })
+        }
     }
 
     override fun <A> or(parser1: Kind<ForParser, A>, parser2: () -> Kind<ForParser, A>): Kind<ForParser, A> {
-        return Parser({ state ->
+        return Parser { state ->
             val result = parser1.parser()(state)
             when (result) {
                 is Failure -> {
@@ -79,27 +80,27 @@ object Reference : IParser<ForParser> {
                 }
                 else -> result
             }
-        })
+        }
     }
 
     override fun <A> label(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
-        return Parser({ state ->
+        return Parser { state ->
             val result = parser.parser()(state)
             result.mapError { it.label(msg) }
-        })
+        }
     }
 
     override fun <A> scope(msg: String, parser: Kind<ForParser, A>): Kind<ForParser, A> {
-        return Parser({ state ->
+        return Parser { state ->
             val result = parser.parser()(state)
             result.mapError { ParseError(it.stack.setHead(Pair(state.location, msg))) }
-        })
+        }
     }
 
     override fun <A> attempt(parser: Kind<ForParser, A>): Kind<ForParser, A> {
-        return Parser({ state ->
+        return Parser { state ->
             parser.parser()(state).uncommit()
-        })
+        }
     }
 
     /** Returns -1 if s1.startsWith(s2), otherwise returns the

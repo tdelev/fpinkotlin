@@ -2,7 +2,10 @@ package parsing
 
 import datastructures.*
 import datastructures.List
-import errorhandling.*
+import errorhandling.Either
+import errorhandling.Left
+import errorhandling.Right
+import errorhandling.getOrElse
 import higherkind.Kind
 import java.util.regex.Pattern
 
@@ -56,7 +59,7 @@ data class ParseError(val stack: List<Pair<Location, String>>) {
             ParseError(list(
                     stack.head().map {
                         Pair(it.first, msg)
-                    }.getOrElse({ Pair(Location("", 0), "") })
+                    }.getOrElse { Pair(Location("", 0), "") }
             ))
 
     private fun collapseErrors() = stack.toKList()
@@ -70,7 +73,7 @@ data class ParseError(val stack: List<Pair<Location, String>>) {
         else {
             // val collapsed = collapseErrors()
             val errors = stack.map { "Error in '${it.second}': ${it.first}" }
-                    .foldLeft(StringBuilder(), { str, builder -> builder.append(str) })
+                    .foldLeft(StringBuilder()) { str, builder -> builder.append(str) }
             return errors.toString()
         }
     }
@@ -122,28 +125,28 @@ interface IParser<F> {
     fun regex(r: Regex): Kind<F, String>
 
     fun <A> defaultSucceed(a: A): Kind<F, A> =
-            map(string(""), { a })
+            map(string("")) { a }
 
     fun <A> many(parser: Kind<F, A>): Kind<F, List<A>> =
-            or(map2(parser, { many(parser) }, { a, list -> list.setHead(a) }), { succeed(empty()) })
+            or(map2(parser, { many(parser) }, { a, list -> list.setHead(a) })) { succeed(empty()) }
 
     fun <A> many1(parser: Kind<F, A>): Kind<F, List<A>> =
             map2(parser, { many(parser) }, { a, list -> list.setHead(a) })
 
     fun <A, B> map(parser: Kind<F, A>, f: (A) -> B): Kind<F, B> =
-            flatMap(parser, { a: A -> succeed(f(a)) })
+            flatMap(parser) { a: A -> succeed(f(a)) }
 
     fun <A, B, C> map2(pa: Kind<F, A>, pb: () -> Kind<F, B>, f: (A, B) -> C): Kind<F, C> =
-            flatMap(pa, { a -> map(pb(), { f(a, it) }) })
+            flatMap(pa) { a -> map(pb()) { f(a, it) } }
 
     fun char(c: Char): Kind<F, Char> =
-            map(string(c.toString()), { it[0] })
+            map(string(c.toString())) { it[0] }
 
     fun <A, B> product(parser1: Kind<F, A>, parser2: () -> Kind<F, B>): Kind<F, Pair<A, B>> =
-            flatMap(parser1, { a -> map(parser2(), { Pair(a, it) }) })
+            flatMap(parser1) { a -> map(parser2()) { Pair(a, it) } }
 
     fun <A, B> `as`(parser: Kind<F, A>, b: B) =
-            map(slice(parser), { _ -> b })
+            map(slice(parser)) { _ -> b }
 
     fun <A, B> skipLeft(left: Kind<F, A>, right: () -> Kind<F, B>): Kind<F, B> =
             map2(slice(left), { right() }, { _, b -> b })
@@ -152,7 +155,7 @@ interface IParser<F> {
             map2(left, { slice(right()) }, { a, _ -> a })
 
     fun <A, B, C> surround(start: Kind<F, A>, stop: Kind<F, B>, parser: () -> Kind<F, C>): Kind<F, C> =
-            skipLeft(start, { skipRight(parser(), { stop }) })
+            skipLeft(start) { skipRight(parser()) { stop } }
 
     /** Parser which consumes zero or more whitespace characters. */
     fun whitespace() = regex(Regex("\\s*"))
@@ -164,11 +167,11 @@ interface IParser<F> {
     fun thru(s: String) = regex(Regex(".*?${Pattern.quote(s)}"))
 
     /** Unescaped string literals, like "foo" or "bar". */
-    fun quoted() = map(skipLeft(string("\""), { thru("\"") }), { it.dropLast(1) })
+    fun quoted() = map(skipLeft(string("\"")) { thru("\"") }) { it.dropLast(1) }
 
     /** Attempts `p` and strips trailing whitespace, usually used for the tokens of a grammar. */
     fun <A> token(parser: Kind<F, A>): Kind<F, A> =
-            skipRight(attempt(parser), { whitespace() })
+            skipRight(attempt(parser)) { whitespace() }
 
     /** Unescaped or escaped string literals, like "An \n important \"Quotation\"" or "bar". */
     fun escapedQuoted(): Kind<F, String> =
@@ -182,19 +185,19 @@ interface IParser<F> {
 
     /** Floating point literals, converted to a `Double`. */
     fun double(): Kind<F, Double> =
-            map(doubleString(), { it.toDouble() })
+            map(doubleString()) { it.toDouble() }
 
     /** One or more repetitions of `parser`, separated by `ignored`, whose results are ignored. */
     fun <A, B> sep1(parser: Kind<F, A>, ignored: Kind<F, B>): Kind<F, List<A>> =
-            map2(parser, { many(skipLeft(ignored, { parser })) }, { element, list: List<A> -> list.setHead(element) })
+            map2(parser, { many(skipLeft(ignored) { parser }) }, { element, list: List<A> -> list.setHead(element) })
 
     /** Zero or more repetitions of `parser`, separated by `ignored`, whose results are ignored. */
     fun <A, B> sep(parser: Kind<F, A>, ignored: Kind<F, B>): Kind<F, List<A>> =
-            or(sep1(parser, ignored), { succeed(empty()) })
+            or(sep1(parser, ignored)) { succeed(empty()) }
 
     fun eof(): Kind<F, String> =
             label("unexpected trailing character", regex(Regex("\\z")))
 
     fun <A> root(parser: Kind<F, A>): Kind<F, A> =
-            skipRight(parser, { eof() })
+            skipRight(parser) { eof() }
 }

@@ -39,13 +39,13 @@ fun <E, A, B, C> Either<E, A>.map2(second: Either<E, B>, f: (A, B) -> C): Either
 fun <E, T, R> traverse(list: List<T>, f: (T) -> Either<E, R>): Either<E, List<R>> =
         when (list) {
             Nil -> Right(Nil)
-            is Cons -> f(list.head).map2(traverse(list.tail, f), { first, second ->
+            is Cons -> f(list.head).map2(traverse(list.tail, f)) { first, second ->
                 Cons(first, second)
-            })
+            }
         }
 
 fun <E, T> sequence(list: List<Either<E, T>>): Either<E, List<T>> =
-        traverse(list, { it })
+        traverse(list) { it }
 
 class Left<out E>(val value: E) : Either<E, Nothing>()
 class Right<out T>(val value: T) : Either<Nothing, T>()

@@ -8,7 +8,8 @@ import state.State
 class Gen<A>(val sample: State<RNG, A>) {
 
     fun <B> map(f: (A) -> B): Gen<B> =
-            Gen(sample.map(f))
+            flatMap { Generator.unit(f(it)) }
+            //Gen(sample.map(f))
 
     fun <B, C> map2(gen: Gen<B>, f: (A, B) -> C): Gen<C> =
             Gen(sample.map2(gen.sample, f))

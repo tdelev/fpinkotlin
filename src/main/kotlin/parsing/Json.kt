@@ -31,47 +31,47 @@ data class JObject(val value: Map<String, Json>) : Json() {
 
 
 class JSON(private val parser: IParser<ForParser>) {
-    fun <A> Kind<ForParser, A>.or(p: () -> Kind<ForParser, A>) = parser.or(this, p)
-    fun <A> Kind<ForParser, A>.scope(msg: String) = parser.scope(msg, this)
-    fun <A, B> Kind<ForParser, A>.to(b: B) = parser.`as`(this, b)
+    private fun <A> Kind<ForParser, A>.or(p: () -> Kind<ForParser, A>) = parser.or(this, p)
+    private fun <A> Kind<ForParser, A>.scope(msg: String) = parser.scope(msg, this)
+    private fun <A, B> Kind<ForParser, A>.to(b: B) = parser.`as`(this, b)
     fun <A, B> Kind<ForParser, A>.map(f: (A) -> B) = parser.map(this, f)
 
     fun token(str: String) = parser.token(parser.string(str))
 
-    val literal = token("null").to(JNull).or({
-        parser.double().map({
+    val literal = token("null").to(JNull).or {
+        parser.double().map {
             JNumber(it)
-        })
-    }).or({
-        parser.escapedQuoted().map({ JString(it) })
-    }).or({
+        }
+    }.or {
+        parser.escapedQuoted().map { JString(it) }
+    }.or {
         token("false").to(JBool(false))
-    }).or({
+    }.or {
         token("true").to(JBool(true))
-    }).scope("literal")
+    }.scope("literal")
 
     val value: Kind<ForParser, Json> = literal.or { obj }.or { array }
 
-    val keyval = parser.product(parser.escapedQuoted(), { parser.skipLeft(token(":"), { value }) })
+    val keyval = parser.product(parser.escapedQuoted()) { parser.skipLeft(token(":")) { value } }
 
-    val obj = parser.surround(token("{"), token("}"), {
+    val obj = parser.surround(token("{"), token("}")) {
         parser.sep(keyval, token(",")).map { kvs ->
-            val map = kvs.foldLeft(mutableMapOf<String, Json>(), { element, map ->
+            val map = kvs.foldLeft(mutableMapOf<String, Json>()) { element, map ->
                 map[element.first] = element.second
                 map
-            })
+            }
             JObject(map)
         }.scope("object")
-    })
+    }
 
-    val array = parser.surround(token("["), token("]"), {
+    val array = parser.surround(token("["), token("]")) {
         parser.sep(value, token(",")).map {
             JArray(it)
         }.scope("array")
-    })
+    }
 
     fun parse(): Parser<Json> {
-        return parser.root(parser.skipLeft(parser.whitespace(), { obj.or { array } })).fix()
+        return parser.root(parser.skipLeft(parser.whitespace()) { obj.or { array } }).fix()
     }
 
 }
@@ -97,7 +97,7 @@ fun main(args: Array<String>) {
 
     val malformedJson1 = """
 {
-  "Company name" ; "Microsoft Corporation"
+  "Company name" : "Microsoft Corporation
 }
 """
     val errorResult = Reference.run(jsonParser.parse(), malformedJson1)
@@ -106,7 +106,7 @@ fun main(args: Array<String>) {
     val malformedJson2 = """
 [
   [ "HPQ", "IBM",
-  "YHOO", "DELL" ++
+  "YHOO", "DELL" ,
   "GOOG"
   ]
 ]

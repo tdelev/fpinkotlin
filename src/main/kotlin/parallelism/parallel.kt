@@ -31,21 +31,21 @@ fun <A> fork(a: () -> Par<A>): Par<A> = { es ->
     es.submit(Callable<A> { a()(es).get() })
 }
 
-fun <A> lazyUnit(a: () -> A): Par<A> = fork({ unit(a()) })
+fun <A> lazyUnit(a: () -> A): Par<A> = fork { unit(a()) }
 
 fun <A> runBlocking(es: ExecutorService, a: Par<A>): Future<A> = a(es)
 
 fun <A, B> asyncF(f: (A) -> B): (A) -> Par<B> =
-        { lazyUnit({ f(it) }) }
+        { lazyUnit { f(it) } }
 
 fun sortPar(parList: Par<List<Int>>): Par<List<Int>> =
-        map2(parList, unit({}), { l1, _ -> l1.sorted() })
+        map2(parList, unit({})) { l1, _ -> l1.sorted() }
 
 fun <A, B> map(par: Par<A>, f: (A) -> B): Par<B> =
-        map2(par, unit({}), { a, _ -> f(a) })
+        map2(par, unit({})) { a, _ -> f(a) }
 
 fun <A> sequence(list: List<Par<A>>): Par<List<A>> =
-        list.foldRight(unit(listOf()), { element, acc -> map2(element, acc, { el, l -> l + el }) })
+        list.foldRight(unit(listOf())) { element, acc -> map2(element, acc) { el, l -> l + el } }
 
 fun <A, B> parMap(list: List<A>, f: (A) -> B): Par<List<B>> {
     val parList = list.map(asyncF(f))
@@ -53,8 +53,8 @@ fun <A, B> parMap(list: List<A>, f: (A) -> B): Par<List<B>> {
 }
 
 fun <A> parFilter(list: List<A>, f: (A) -> Boolean): Par<List<A>> {
-    val lifted = list.map(asyncF<A, List<A>>({ if (f(it)) listOf(it) else listOf() }))
-    return map(sequence(lifted), { it.flatten() })
+    val lifted = list.map(asyncF<A, List<A>> { if (f(it)) listOf(it) else listOf() })
+    return map(sequence(lifted)) { it.flatten() }
 }
 
 fun main(args: Array<String>) {

@@ -22,12 +22,12 @@ object Random {
 
     val int: Rand<Int> = { it.nextInt() }
 
-    val boolean: Rand<Boolean> = map(int, { it % 2 == 0 })
+    val boolean: Rand<Boolean> = map(int) { it % 2 == 0 }
 
-    val char: Rand<Char> = map2(nonNegativeIntLessThen(26), boolean, { i, upper ->
+    val char: Rand<Char> = map2(nonNegativeIntLessThen(26), boolean) { i, upper ->
         if (upper) ('A' + i)
         else ('a' + i)
-    })
+    }
 
     fun <T> unit(a: T): Rand<T> = { Pair(a, it) }
 
@@ -42,7 +42,7 @@ object Random {
     }
 
     fun <T, R> _map(s: Rand<T>, f: (T) -> R): Rand<R> =
-            flatMap(s, { unit(f(it)) })
+            flatMap(s) { unit(f(it)) }
 
     fun <T1, T2, R> map2(r1: Rand<T1>, r2: Rand<T2>, f: (T1, T2) -> R): Rand<R> {
         return {
@@ -53,16 +53,16 @@ object Random {
     }
 
     fun <T1, T2, R> _map2(r1: Rand<T1>, r2: Rand<T2>, f: (T1, T2) -> R): Rand<R> =
-            flatMap(r1, { a -> map(r2, { f(a, it) }) })
+            flatMap(r1) { a -> map(r2) { f(a, it) } }
 
     fun <A, B> both(ra: Rand<A>, rb: Rand<B>): Rand<Pair<A, B>> =
-            map2(ra, rb, { a, b -> Pair(a, b) })
+            map2(ra, rb) { a, b -> Pair(a, b) }
 
     fun randIntDouble(): Rand<Pair<Int, Double>> = both(int, double)
     fun randDoubleInt(): Rand<Pair<Double, Int>> = both(double, int)
 
     fun <T> sequence(fs: List<Rand<T>>): Rand<List<T>> =
-            fs.foldRight(unit(Nil as List<T>), { element, list -> map2(element, list, { a, b -> Cons(a, b) }) })
+            fs.foldRight(unit(Nil as List<T>)) { element, list -> map2(element, list) { a, b -> Cons(a, b) } }
 
     fun <T, R> flatMap(f: Rand<T>, g: (T) -> Rand<R>): Rand<R> = {
         val next = f(it)
@@ -70,14 +70,14 @@ object Random {
     }
 
     fun nonNegativeIntLessThen(n: Int): Rand<Int> =
-            flatMap(::nonNegativeInt, {
+            flatMap(::nonNegativeInt) {
                 val mod = it % n
                 if (it + (n - 1) - mod >= 0) unit(mod)
                 else nonNegativeIntLessThen(n)
-            })
+            }
 
     fun nonNegativeEven(): Rand<Int> =
-            map(::nonNegativeInt, { it - it % 2 })
+            map(::nonNegativeInt) { it - it % 2 }
 
     class SimpleRNG(val seed: Long) : RNG {
         override fun nextInt(): Pair<Int, RNG> {
@@ -112,7 +112,7 @@ object Random {
         return Pair(nonNegative.first / (Int.MAX_VALUE.toDouble() + 1), nonNegative.second)
     }
 
-    val double: Rand<Double> = map(::nonNegativeInt, { it / (Int.MAX_VALUE.toDouble() + 1) })
+    val double: Rand<Double> = map(::nonNegativeInt) { it / (Int.MAX_VALUE.toDouble() + 1) }
 
     fun intDouble(rng: RNG): Pair<Pair<Int, Double>, RNG> {
         val int = rng.nextInt()
@@ -144,7 +144,7 @@ object Random {
         }
     }
 
-    fun rollDie(): Rand<Int> = map(nonNegativeIntLessThen(6), { it + 1 })
+    fun rollDie(): Rand<Int> = map(nonNegativeIntLessThen(6)) { it + 1 }
 
 }
 

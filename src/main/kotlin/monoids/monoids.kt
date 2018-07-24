@@ -63,7 +63,7 @@ fun <А> concatenate(list: List<А>, monoid: Monoid<А>): А =
         list.foldLeft(monoid.zero(), monoid::op)
 
 fun <A, B> foldMap(list: List<A>, monoid: Monoid<B>, f: (A) -> B): B =
-        list.foldLeft(monoid.zero(), { a, b -> monoid.op(f(a), b) })
+        list.foldLeft(monoid.zero()) { a, b -> monoid.op(f(a), b) }
 
 fun <A, B> foldMapV(arrayList: kotlin.collections.List<A>, monoid: Monoid<B>, f: (A) -> B): B {
     return when {
@@ -87,7 +87,7 @@ fun <A> par(monoid: Monoid<A>) = object : Monoid<NonblockingPar<A>> {
 
 fun <A, B> parFoldMap(list: kotlin.collections.List<A>, monoid: Monoid<B>, f: (A) -> B): NonblockingPar<B> =
         Nonblocking.parMap(list, f).flatMap { resultList ->
-            foldMapV(resultList, par(monoid), { Nonblocking.lazyUnit { it } })
+            foldMapV(resultList, par(monoid)) { Nonblocking.lazyUnit { it } }
         }
 
 
@@ -100,11 +100,11 @@ fun <A, B> productMonoid(ma: Monoid<A>, mb: Monoid<B>): Monoid<Pair<A, B>> = obj
 
 fun <K, V> mapMergeMonoid(monoid: Monoid<V>): Monoid<Map<K, V>> = object : Monoid<Map<K, V>> {
     override fun op(a: Map<K, V>, b: Map<K, V>): Map<K, V> {
-        return (a.keys + b.keys).fold(mutableMapOf(), { acc, key ->
+        return (a.keys + b.keys).fold(mutableMapOf()) { acc, key ->
             val value = monoid.op(a.getOrDefault(key, monoid.zero()), b.getOrDefault(key, monoid.zero()))
             acc[key] = value
             acc
-        })
+        }
     }
 
     override fun zero(): Map<K, V> = mapOf()
@@ -121,12 +121,12 @@ fun <A, B> functionMonoid(monoid: Monoid<B>): Monoid<(A) -> B> = object : Monoid
 
 fun <A> bag(list: MutableList<A>): Map<A, Int> {
     val merge = mapMergeMonoid<A, Int>(intAddition)
-    return foldMapV(list, merge, { mapOf(it to 1) })
+    return foldMapV(list, merge) { mapOf(it to 1) }
 }
 
 
 fun main(args: Array<String>) {
-    val sum = foldMapV(listOf(1, 5, 12, 10, 30), intAddition, { it })
+    val sum = foldMapV(listOf(1, 5, 12, 10, 30), intAddition) { it }
     println(sum)
 
     val m1 = mapOf("a" to 10)
@@ -138,6 +138,6 @@ fun main(args: Array<String>) {
     println(bag(list))
 
     val product = productMonoid(intAddition, intAddition)
-    val sumAndCount = foldMapV(list, product, { Pair(it, 1) })
+    val sumAndCount = foldMapV(list, product) { Pair(it, 1) }
     println(sumAndCount)
 }

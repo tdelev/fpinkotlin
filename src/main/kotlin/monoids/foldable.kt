@@ -16,7 +16,7 @@ object FoldableList : Foldable<ForList> {
 
     override fun <A, B> foldLeft(collection: Kind<ForList, A>, identity: B, f: (B, A) -> B): B {
         val list = collection.fix()
-        return list.list.foldLeft(identity, { a, b -> f(b, a) })
+        return list.list.foldLeft(identity) { a, b -> f(b, a) }
     }
 
     override fun <A, B> foldMap(collection: Kind<ForList, A>, f: (A) -> B, monoid: Monoid<B>): B {

@@ -17,7 +17,7 @@ object Generator {
             Gen(State(Random.boolean))
 
     fun string(n: Int): Gen<String> =
-            Gen(State({ Random.string(n, it) }))
+            Gen(State { Random.string(n, it) })
 
     fun <A> union(g1: Gen<A>, g2: Gen<A>): Gen<A> =
             boolean().flatMap { if (it) g1 else g2 }
@@ -27,16 +27,16 @@ object Generator {
         return Gen(State(Random.double)).flatMap { if (it < threshold) g1.first else g2.first }
     }
 
-    val S = weighted(Pair(choose(1, 4).map({ Executors.newFixedThreadPool(it) }), .75),
+    val S = weighted(Pair(choose(1, 4).map { Executors.newFixedThreadPool(it) }, .75),
             Pair(unit(Executors.newCachedThreadPool()), .25))
 
     fun <A> listOf(gen: Gen<A>): SizedGen<List<A>> =
-            SizedGen({ n -> gen.listOfN(n) })
+            SizedGen { n -> gen.listOfN(n) }
 
     fun <A> listKOf(gen: Gen<A>): SizedGen<kotlin.collections.List<A>> =
-            SizedGen({ n -> gen.listKOfN(n) })
+            SizedGen { n -> gen.listKOfN(n) }
 
     fun <A> listOf1(gen: Gen<A>): SizedGen<List<A>> =
-            SizedGen({ n -> gen.listOfN(Math.max(n, 1)) })
+            SizedGen { n -> gen.listOfN(Math.max(n, 1)) }
 
 }

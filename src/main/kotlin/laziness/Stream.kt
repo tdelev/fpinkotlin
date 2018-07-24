@@ -33,7 +33,7 @@ sealed class Stream<out T> {
             }
 
     fun takeU(n: Int): Stream<T> =
-            unfold(Pair(this, n), {
+            unfold(Pair(this, n)) {
                 when (it.second) {
                     0 -> None
                     else -> {
@@ -44,7 +44,7 @@ sealed class Stream<out T> {
                         }
                     }
                 }
-            })
+            }
 
     fun drop(n: Int): Stream<T> =
             when (n) {
@@ -68,14 +68,14 @@ sealed class Stream<out T> {
             }
 
     fun takeWhileU(predicate: (T) -> Boolean): Stream<T> =
-            unfold(this, {
+            unfold(this) {
                 when (it) {
                     is Cons -> if (predicate(it.head()))
                         Some(Pair(it.head(), it.tail()))
                     else None
                     else -> None
                 }
-            })
+            }
 
     fun takeWhileFR(predicate: (T) -> Boolean): Stream<T> =
             foldRight<Stream<T>>({ Empty }, { left, right ->
@@ -85,7 +85,7 @@ sealed class Stream<out T> {
 
     fun <R> foldRight(identity: () -> R, f: (T, () -> R) -> R): R =
             when (this) {
-                is Cons -> f(this.head(), { this.tail().foldRight(identity, f) })
+                is Cons -> f(this.head()) { this.tail().foldRight(identity, f) }
                 else -> identity()
             }
 
@@ -103,12 +103,12 @@ sealed class Stream<out T> {
             foldRight<Stream<R>>({ Empty }, { left, right -> cons(f(left), right()) })
 
     fun <R> mapU(f: (T) -> R): Stream<R> =
-            unfold(this, { stream ->
+            unfold(this) { stream ->
                 when (stream) {
                     is Cons -> Some(Pair(f(stream.head()), stream.tail()))
                     else -> None
                 }
-            })
+            }
 
     fun filter(predicate: (T) -> Boolean): Stream<T> =
             foldRight<Stream<T>>({ Empty }, { left, right ->
@@ -121,7 +121,7 @@ sealed class Stream<out T> {
             foldRight<Stream<R>>({ Empty }, { left, right -> f(left).append(right) })
 
     fun <T> startsWith(other: Stream<T>): Boolean {
-        return zipAll(other, { a, b -> Pair(a, b) })
+        return zipAll(other) { a, b -> Pair(a, b) }
                 .takeWhile {
                     it.second != None
                 }
@@ -131,12 +131,12 @@ sealed class Stream<out T> {
     }
 
     fun tails(): Stream<Stream<T>> =
-            unfold(this, {
+            unfold(this) {
                 when (it) {
                     Empty -> None
                     is Cons -> Some(Pair(it, it.drop(1)))
                 }
-            })
+            }
 
     fun <T> hasSubsequence(stream: Stream<T>): Boolean =
             this.tails().exists { it.startsWith(stream) }
@@ -181,20 +181,20 @@ fun <A, S> unfold(initial: S, f: (S) -> Option<Pair<A, S>>): Stream<A> {
     }
 }
 
-fun constantU(value: Int) = unfold(value, { Some(Pair(it, it)) })
+fun constantU(value: Int) = unfold(value) { Some(Pair(it, it)) }
 
-fun fromU(start: Int) = unfold(start, { Some(Pair(it + 1, it + 1)) })
+fun fromU(start: Int) = unfold(start) { Some(Pair(it + 1, it + 1)) }
 
-fun fibsU() = unfold(Pair(0, 1), { state ->
+fun fibsU() = unfold(Pair(0, 1)) { state ->
     Some(Pair(Pair(state.second, state.first + state.second),
             Pair(state.second, state.first + state.second)))
-})
+}
 
 fun <T> Stream<T>.append(element: () -> Stream<T>): Stream<T> =
-        foldRight(element, { left, right -> cons(left, right()) })
+        foldRight(element) { left, right -> cons(left, right()) }
 
 fun <A, B, R> Stream<A>.zipWith(stream: Stream<B>, f: (A, B) -> R): Stream<R> =
-        unfold(Pair(this, stream), {
+        unfold(Pair(this, stream)) {
             val first = it.first
             val second = it.second
 
@@ -207,10 +207,10 @@ fun <A, B, R> Stream<A>.zipWith(stream: Stream<B>, f: (A, B) -> R): Stream<R> =
                 }
                 else -> None
             }
-        })
+        }
 
 fun <T1, T2, R> Stream<T1>.zipAll(stream: Stream<T2>, f: (T1, T2) -> R): Stream<R> =
-        unfold(Pair(this, stream), {
+        unfold(Pair(this, stream)) {
             val first = it.first
             val second = it.second
 
@@ -226,7 +226,7 @@ fun <T1, T2, R> Stream<T1>.zipAll(stream: Stream<T2>, f: (T1, T2) -> R): Stream<
                     else -> None
                 }
             }
-        }) as Stream<R>
+        } as Stream<R>
 
 
 fun main(args: Array<String>) {

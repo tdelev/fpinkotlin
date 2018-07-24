@@ -27,7 +27,7 @@ val wcMonoid: Monoid<WordCount> = object : Monoid<WordCount> {
 fun count(text: String): Int {
 
     fun wc(c: Char): WordCount =
-            if (c.isWhitespace()) Part("", 0, "")
+            if (c.isWhitespace() || c.isDigit() || c == '\n' || c == '\r') Part("", 0, "")
             else Stub(c.toString())
 
     fun unstub(s: String) = min(s.length, 1)

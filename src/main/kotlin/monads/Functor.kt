@@ -9,11 +9,11 @@ interface Functor<F> {
     fun <A, B> map(fa: Kind<F, A>, f: (A) -> B): Kind<F, B>
 
     fun <A, B> distribute(ab: Kind<F, Pair<A, B>>): Pair<Kind<F, A>, Kind<F, B>> =
-            Pair(map(ab, { it.first }), map(ab, { it.second }))
+            Pair(map(ab) { it.first }, map(ab) { it.second })
 
     fun <A, B> codistribute(e: Either<Kind<F, A>, Kind<F, B>>): Kind<F, Either<A, B>> =
             when (e) {
-                is Left -> map(e.value, { Left(it) })
-                is Right -> map(e.value, { Right(it) })
+                is Left -> map(e.value) { Left(it) }
+                is Right -> map(e.value) { Right(it) }
             }
 }

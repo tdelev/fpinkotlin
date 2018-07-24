@@ -17,6 +17,6 @@ interface Foldable<F> {
             foldLeft(collection, monoid.zero(), monoid::op)
 
     fun <A> toList(collection: Kind<F, A>): List<A> =
-            foldLeft(collection, Nil as List<A>, { list, element -> Cons(element, list) })
+            foldLeft(collection, Nil as List<A>) { list, element -> Cons(element, list) }
 
 }

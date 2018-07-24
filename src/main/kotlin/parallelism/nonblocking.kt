@@ -70,25 +70,25 @@ object Nonblocking {
         object : Callback<B> {
             override fun onComplete(a: (B) -> Unit) {
                 val es = it
-                par(es).onComplete { eval(es, { a(f(it)) }) }
+                par(es).onComplete { eval(es) { a(f(it)) } }
             }
         }
     }
 
-    fun <A> sequenceBalanced(list: List<NonblockingPar<A>>): NonblockingPar<List<A>> = fork({
+    fun <A> sequenceBalanced(list: List<NonblockingPar<A>>): NonblockingPar<List<A>> = fork {
         when {
             list.isEmpty() -> unit(arrayListOf())
-            list.size == 1 -> map(list[0], { arrayListOf(it) })
+            list.size == 1 -> map(list[0]) { arrayListOf(it) }
             else -> {
                 val left = list.subList(0, list.size / 2)
                 val right = list.subList(list.size / 2, list.size)
-                map2(sequenceBalanced(left), sequenceBalanced(right), { a, b -> a + b })
+                map2(sequenceBalanced(left), sequenceBalanced(right)) { a, b -> a + b }
             }
         }
-    })
+    }
 
     fun <A> sequence(list: List<NonblockingPar<A>>): NonblockingPar<List<A>> =
-            map(sequenceBalanced(list), { it })
+            map(sequenceBalanced(list)) { it }
 
     fun <A, B> parMap(list: List<A>, f: (A) -> B): NonblockingPar<List<B>> =
             sequence(list.map(asyncF { a -> f(a) }))
@@ -113,7 +113,7 @@ object Nonblocking {
     fun <A> fork(par: () -> NonblockingPar<A>): NonblockingPar<A> = {
         object : Callback<A> {
             override fun onComplete(a: (A) -> Unit) {
-                eval(it, { par()(it).onComplete(a) })
+                eval(it) { par()(it).onComplete(a) }
             }
         }
     }

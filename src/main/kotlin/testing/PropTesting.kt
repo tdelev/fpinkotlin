@@ -69,14 +69,14 @@ fun <A> forAll(sgen: SizedGen<A>, predicate: (A) -> Boolean): Prop =
         forAll(sgen.forSize, predicate)
 
 fun <A> forAllPar(gen: Gen<A>, f: (A) -> Par<Boolean>): Prop =
-        forAll(Generator.S.combine(gen), { f(it.second)(it.first).get() })
+        forAll(Generator.S.combine(gen)) { f(it.second)(it.first).get() }
 
 fun check(predicate: () -> Boolean): Prop = Prop { _, _, _ ->
     if (predicate()) Proved else Failed("", 0)
 }
 
 fun checkPar(par: Par<Boolean>): Prop =
-        forAllPar(Generator.unit(1), { par })
+        forAllPar(Generator.unit(1)) { par }
 
 sealed class Result {
     abstract val isFalsified: Boolean
@@ -112,38 +112,38 @@ fun run(prop: Prop, maxSize: Int = 100, testCases: Int = 100,
 }
 
 fun <A> equal(pa: Par<A>, pb: Par<A>): Par<Boolean> =
-        map2(pa, pb, { a, b -> a == b })
+        map2(pa, pb) { a, b -> a == b }
 
 fun main(args: Array<String>) {
     val generator = Random.SimpleRNG(System.currentTimeMillis())
     val smallInt = Generator.choose(-10, 10)
     val listR = Generator.listOf(smallInt)
-    val maxProp = forAll(listR, {
+    val maxProp = forAll(listR) {
         val max = it.foldRight(Int.MIN_VALUE, Math::max)
         println("Max: $max")
         println("List: $it")
         it.all { it <= max }
-    })
+    }
     run(maxProp)
     //println(listR.forSize(5).sample.run(generator))
     /*val rndS = randomStream(smallInt, generator).zipWith(from(0), { a, b -> Pair(a, b) })
     println(rndS.take(10).find({ it.first > 9 }))*/
     val ES = Executors.newCachedThreadPool()
-    val p1 = check({
-        map(unit(1), { it + 1 })(ES).get() == unit(2)(ES).get()
-    })
+    val p1 = check {
+        map(unit(1)) { it + 1 }(ES).get() == unit(2)(ES).get()
+    }
     run(p1)
 
     val p2 = checkPar {
         equal(
-                map(unit(1), { it + 1 }),
+                map(unit(1)) { it + 1 },
                 unit(2)
         )(it)
     }
 
-    val pint = Generator.choose(0, 10).map({ unit(1) })
-    val p4 = forAllPar(pint, {
-        equal(map(it, { it }), it)
-    })
+    val pint = Generator.choose(0, 10).map { unit(1) }
+    val p4 = forAllPar(pint) {
+        equal(map(it) { it }, it)
+    }
     run(p4)
 }

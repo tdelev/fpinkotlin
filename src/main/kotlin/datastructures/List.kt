@@ -17,13 +17,13 @@ sealed class List<out T> {
     }
 
     fun <R> map(f: (T) -> R): List<R> =
-            foldRight<List<R>>(Nil, { element, result -> Cons(f(element), result) })
+            foldRight<List<R>>(Nil) { element, result -> Cons(f(element), result) }
 
     fun <R> flatMap(f: (T) -> List<R>): List<R> =
-            foldRight<List<R>>(Nil, { element, result ->
+            foldRight<List<R>>(Nil) { element, result ->
                 val inner = f(element)
-                inner.foldRight(result, { e, l -> Cons(e, l) })
-            })
+                inner.foldRight(result) { e, l -> Cons(e, l) }
+            }
 
     fun <R> foldRight(identity: R, f: (T, R) -> R): R = when (this) {
         Nil -> identity
@@ -31,10 +31,10 @@ sealed class List<out T> {
     }
 
     fun all(predicate: (T) -> Boolean): Boolean =
-            foldRight(true, { element, exist -> predicate(element) && exist })
+            foldRight(true) { element, exist -> predicate(element) && exist }
 
     fun any(predicate: (T) -> Boolean): Boolean =
-            foldRight(false, { element, exist -> predicate(element) || exist })
+            foldRight(false) { element, exist -> predicate(element) || exist }
 
     fun <R> foldLeft(identity: R, f: (T, R) -> R): R {
         tailrec fun flAcc(acc: R, list: List<T>): R =
@@ -65,14 +65,14 @@ sealed class List<out T> {
             }
 
     fun filter(predicate: (T) -> Boolean): List<T> =
-            foldRight(Nil as List<T>, { element, result ->
+            foldRight(Nil as List<T>) { element, result ->
                 if (predicate(element)) Cons(element, result)
                 else result
-            })
+            }
 
-    val length = { foldRight(0, { _, count -> count + 1 }) }
+    val length = { foldRight(0) { _, count -> count + 1 } }
 
-    val reverse = { foldLeft<List<T>>(Nil, { x, y -> Cons(x, y) }) }
+    val reverse = { foldLeft<List<T>>(Nil) { x, y -> Cons(x, y) } }
 
     fun head() = when (this) {
         is Nil -> None
@@ -113,19 +113,19 @@ fun <T> List<T>.setHead(element: T): List<T> = when (this) {
 
 inline fun <reified T> List<T>.toArray(): Array<T> {
     val result = mutableListOf<T>()
-    this.foldLeft(result, { element, list ->
+    this.foldLeft(result) { element, list ->
         list.add(element)
         list
-    })
+    }
     return result.toTypedArray()
 }
 
 inline fun <reified T> List<T>.toKList(): kotlin.collections.List<T> {
     val result = mutableListOf<T>()
-    this.foldLeft(result, { element, list ->
+    this.foldLeft(result) { element, list ->
         list.add(element)
         list
-    })
+    }
     return result
 }
 
@@ -139,12 +139,12 @@ fun <T> init(list: List<T>): List<T> =
         }
 
 fun <T> List<T>.append(list: List<T>): List<T> =
-        this.foldRight(list, { element, left -> Cons(element, left) })
+        this.foldRight(list) { element, left -> Cons(element, left) }
 
 fun <T> concat(list: List<List<T>>): List<T> {
-    return list.foldRight(Nil as List<T>, { element, result ->
+    return list.foldRight(Nil as List<T>) { element, result ->
         result.append(element)
-    })
+    }
 }
 
 fun <T> List<T>.reduce(f: (T, T) -> T): Option<T> =
@@ -162,10 +162,10 @@ fun <T> fill(n: Int, element: T): List<T> {
 }
 
 fun transformInt(list: List<Int>): List<Int> =
-        list.foldRight(Nil as List<Int>, { element, result -> Cons(element + 1, result) })
+        list.foldRight(Nil as List<Int>) { element, result -> Cons(element + 1, result) }
 
 fun doubleList(list: List<Double>): List<String> =
-        list.foldRight(Nil as List<String>, { element, result -> Cons(element.toString(), result) })
+        list.foldRight(Nil as List<String>) { element, result -> Cons(element.toString(), result) }
 
 
 fun pairwise(list1: List<Int>, list2: List<Int>): List<Int> = when (list1) {
